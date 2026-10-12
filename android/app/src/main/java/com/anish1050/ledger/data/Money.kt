@@ -26,11 +26,17 @@ object Money {
         }
     }
 
+    // "1,23,456.70", "1,234.56" and "1.234,56" all parse to the same minor units:
+    // a trailing comma plus two digits is a decimal separator, other commas and
+    // dots in group position are grouping. Mirrors toMinor() in the backend.
     fun parseToMinor(text: String): Long? {
-        val cleaned = text.replace(",", "").trim()
-        if (cleaned.isEmpty()) return null
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return null
+        val cleaned = if (EUROPEAN.matches(trimmed)) trimmed.replace(".", "").replace(',', '.') else trimmed.replace(",", "")
         return runCatching { BigDecimal(cleaned).movePointRight(2).toLong() }.getOrNull()
     }
+
+    private val EUROPEAN = Regex("""^\d{1,3}(?:\.\d{3})*,\d{1,2}$""")
 
     private fun localeFor(currency: String): Locale = when (currency) {
         "INR" -> Locale("en", "IN")

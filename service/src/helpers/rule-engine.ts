@@ -83,8 +83,12 @@ function toJsRegex(pattern: string): RegExp {
   return new RegExp(body, flags)
 }
 
+// "1,23,456.70" (Indian), "1,234.56" (US) and "1.234,56" (European) all parse
+// to the same minor units: a comma followed by exactly two digits at the end is
+// a decimal separator, every other comma or dot in a group position is grouping.
 export function toMinor(amount: string): number {
-  const cleaned = amount.replace(/,/g, '')
+  const european = /^\d{1,3}(?:\.\d{3})*,\d{1,2}$/.test(amount)
+  const cleaned = european ? amount.replace(/\./g, '').replace(',', '.') : amount.replace(/,/g, '')
   const [whole = '0', frac = ''] = cleaned.split('.')
   return Number(whole) * 100 + Number((frac + '00').slice(0, 2))
 }

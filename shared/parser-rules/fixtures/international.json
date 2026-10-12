@@ -1,0 +1,79 @@
+[
+  {
+    "rule": "us-card-purchase-sms",
+    "source": "sms",
+    "sender": "24273",
+    "text": "Chase: A $42.17 purchase was made with your card ending in 5566 at WHOLE FOODS MARKET on Oct 12. Reply STOP to end alerts.",
+    "expect": { "direction": "debit", "amount_minor": 4217, "last4": "5566", "merchant": "WHOLE FOODS MARKET", "confidence": 0.9 }
+  },
+  {
+    "rule": "us-card-purchase-alt-sms",
+    "source": "sms",
+    "sender": "CAPONE",
+    "text": "You made a $12.99 purchase at NETFLIX.COM with your card ending in 7788.",
+    "expect": { "direction": "debit", "amount_minor": 1299, "last4": "7788", "merchant": "NETFLIX.COM", "confidence": 0.9 }
+  },
+  {
+    "rule": "us-deposit-sms",
+    "source": "sms",
+    "sender": "BOFA",
+    "text": "Bank of America: A deposit of $3,250.00 was posted to your account ending in 1122 from ACME CORP PAYROLL.",
+    "expect": { "direction": "credit", "amount_minor": 325000, "last4": "1122", "merchant": "ACME CORP PAYROLL", "confidence": 0.9 }
+  },
+  {
+    "rule": "uk-card-spent-sms",
+    "source": "sms",
+    "sender": "MONZO",
+    "text": "You spent £8.40 at PRET A MANGER with your Monzo card.",
+    "expect": { "direction": "debit", "amount_minor": 840, "merchant": "PRET A MANGER", "confidence": 0.85 }
+  },
+  {
+    "rule": "uk-received-sms",
+    "source": "sms",
+    "sender": "STARLING",
+    "text": "You received £150.00 from JAMES WILSON.",
+    "expect": { "direction": "credit", "amount_minor": 15000, "merchant": "JAMES WILSON", "confidence": 0.85 }
+  },
+  {
+    "rule": "uae-card-sms",
+    "source": "sms",
+    "sender": "ENBD",
+    "text": "Purchase of AED 215.50 with Card ending 9900 at CARREFOUR MALL OF EMIRATES on 12/10/2026 14:02. Avl bal AED 5,784.50",
+    "expect": { "direction": "debit", "amount_minor": 21550, "last4": "9900", "merchant": "CARREFOUR MALL OF EMIRATES", "confidence": 0.9 }
+  },
+  {
+    "rule": "mpesa-sent-sms",
+    "source": "sms",
+    "sender": "MPESA",
+    "text": "RJC4K7L2M9 Confirmed. Ksh1,200.00 sent to NAIVAS SUPERMARKET on 12/10/26 at 3:14 PM. New M-PESA balance is Ksh4,800.00.",
+    "expect": { "direction": "debit", "amount_minor": 120000, "merchant": "NAIVAS SUPERMARKET", "ref": "RJC4K7L2M9", "confidence": 0.95 }
+  },
+  {
+    "rule": "mpesa-received-sms",
+    "source": "sms",
+    "sender": "MPESA",
+    "text": "RJC4K7L2N1 Confirmed. You have received Ksh500.00 from JOHN KAMAU on 12/10/26 at 9:00 AM. New M-PESA balance is Ksh5,300.00.",
+    "expect": { "direction": "credit", "amount_minor": 50000, "merchant": "JOHN KAMAU", "ref": "RJC4K7L2N1", "confidence": 0.95 }
+  },
+  {
+    "rule": "bkash-sent-sms",
+    "source": "sms",
+    "sender": "BKASH",
+    "text": "Send Money Tk 1,000.00 to 01711223344 successful. Fee Tk 5.00. Balance Tk 2,495.00. TrxID 9JK2L3M4N5 at 12/10/2026 10:30",
+    "expect": { "direction": "debit", "amount_minor": 100000, "merchant": "01711223344", "ref": "9JK2L3M4N5", "confidence": 0.95 }
+  },
+  {
+    "rule": "nubank-compra-sms",
+    "source": "sms",
+    "sender": "NUBANK",
+    "text": "Compra aprovada no seu cartão Nubank: R$ 89,90 em IFOOD em 12/10.",
+    "expect": { "direction": "debit", "amount_minor": 8990, "merchant": "IFOOD", "confidence": 0.9 }
+  },
+  {
+    "rule": "gpay-received-notification",
+    "source": "notification",
+    "sender": "com.google.android.apps.walletnfcrel",
+    "text": "₹300 received from Dev Patel",
+    "expect": { "direction": "credit", "amount_minor": 30000, "merchant": "Dev Patel", "confidence": 0.95 }
+  }
+]

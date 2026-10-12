@@ -39,7 +39,7 @@
     "source": "sms",
     "sender": "AD-SBIUPI",
     "text": "Dear UPI user A/C X5678 debited by 75.0 on date 12Oct26 trf to Swiggy Refno 428812345678. If not u? call 1800111109. -SBI",
-    "expect": { "direction": "debit", "amount_minor": 7500, "last4": "5678", "merchant": "Swiggy", "ref": "428812345678", "confidence": 0.9 }
+    "expect": { "direction": "debit", "amount_minor": 7500, "last4": "5678", "merchant": "Swiggy", "ref": "428812345678", "confidence": 0.95 }
   },
   {
     "rule": null,

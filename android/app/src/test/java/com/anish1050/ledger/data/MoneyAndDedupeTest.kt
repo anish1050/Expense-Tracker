@@ -12,6 +12,8 @@ class MoneyAndDedupeTest {
     fun parsesToMinorWithoutFloatDrift() {
         assertThat(Money.parseToMinor("1,23,456.7")).isEqualTo(12_345_670L)
         assertThat(Money.parseToMinor("0.1")).isEqualTo(10L)
+        assertThat(Money.parseToMinor("1.234,56")).isEqualTo(123_456L)
+        assertThat(Money.parseToMinor("89,90")).isEqualTo(8_990L)
         assertThat(Money.parseToMinor("abc")).isNull()
     }
 

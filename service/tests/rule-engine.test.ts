@@ -34,5 +34,7 @@ describe('shared parser fixtures', () => {
     expect(toMinor('1,23,456.7')).toBe(12345670)
     expect(toMinor('75.0')).toBe(7500)
     expect(toMinor('120')).toBe(12000)
+    expect(toMinor('1.234,56')).toBe(123456)
+    expect(toMinor('89,90')).toBe(8990)
   })
 })
