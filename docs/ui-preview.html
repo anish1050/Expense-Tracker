@@ -1,0 +1,279 @@
+<title>Spent Screens</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;800&family=DM+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a row of phone frames on a quiet ground; each frame is the app at rest. */
+  :root {
+    --bg: #ececea;
+    --fg: #1a1a1a;
+    --muted: #7a7a76;
+    --frame: #0f0f0f;
+    --paper: #ffffff;
+    --ink: #111111;
+    --mist: #f2f2f0;
+    --graphite: #777777;
+    --line: #d9d9d6;
+    --chip: #fff1c2;
+    --font-ui: "Manrope", "Segoe UI", system-ui, sans-serif;
+    --font-num: "DM Mono", "SFMono-Regular", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #141414; --fg: #ededed; --muted: #8e8e8a; --frame: #2a2a2a; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --bg: #141414; --fg: #ededed; --muted: #8e8e8a; --frame: #2a2a2a; color-scheme: dark; }
+
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); padding-inline: 16px; padding-block: 32px 48px; }
+  header { max-width: 1120px; margin: 0 auto 28px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; }
+  header h1 { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; max-width: 60ch; }
+  .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 28px; max-width: 1180px; margin: 0 auto; }
+  figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  figcaption { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+  .phone { width: 260px; height: 540px; background: var(--frame); border-radius: 40px; padding: 10px; box-shadow: 0 20px 40px rgba(0,0,0,.25); }
+  .screen { position: relative; width: 100%; height: 100%; background: var(--paper); color: var(--ink); border-radius: 31px; overflow: hidden; display: flex; flex-direction: column; font-size: 12px; }
+  .status { display: flex; justify-content: space-between; padding: 12px 22px 0; font-size: 11px; font-weight: 600; }
+  .notch { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 72px; height: 20px; background: var(--frame); border-radius: 12px; }
+  .body { flex: 1; min-height: 0; padding: 10px 18px 0; display: flex; flex-direction: column; gap: 10px; }
+  .pill { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--ink); border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 500; background: var(--paper); }
+  .pill.fill { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .pill.soft { border-color: transparent; background: var(--mist); }
+  .seg { display: inline-flex; background: var(--mist); border-radius: 999px; padding: 3px; }
+  .seg span { padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .seg .on { background: var(--paper); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .big { font-family: var(--font-ui); font-size: 30px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+  .muted { color: var(--graphite); }
+  .tx { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+  .tx .emo { width: 28px; height: 28px; border-radius: 50%; background: var(--mist); display: grid; place-items: center; font-size: 14px; }
+  .tx .name { font-weight: 600; font-size: 12px; }
+  .tx .sub { font-size: 10px; color: var(--graphite); }
+  .tx .amt { margin-left: auto; font-weight: 600; font-size: 12px; }
+  .tx .amt.in { color: #1f7a3a; }
+  .daylabel { display: flex; justify-content: space-between; font-size: 10px; color: var(--graphite); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+  .tabbar { display: flex; justify-content: space-around; align-items: center; padding: 8px 14px 14px; border-top: 1px solid var(--line); }
+  .tabbar svg { width: 20px; height: 20px; stroke: var(--ink); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .fab { width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-items: center; font-size: 20px; font-weight: 500; line-height: 1; }
+
+  /* onboarding */
+  .cloud { position: relative; height: 230px; }
+  .cloud .pill { position: absolute; }
+  .mascot { position: absolute; left: 50%; top: 58%; transform: translate(-50%,-50%); }
+  .wordmark { font-size: 42px; font-weight: 800; letter-spacing: -0.04em; text-align: center; line-height: 1; }
+  .tag { text-align: center; color: var(--graphite); font-size: 11px; }
+  .cta { margin-top: auto; display: flex; flex-direction: column; gap: 8px; padding-bottom: 22px; }
+  .btn { border-radius: 999px; padding: 11px; text-align: center; font-weight: 600; font-size: 12px; background: var(--ink); color: var(--paper); }
+  .btn.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+
+  /* add */
+  .datestrip { display: flex; justify-content: space-between; }
+  .datestrip div { text-align: center; width: 36px; padding: 6px 0; border-radius: 12px; font-size: 10px; color: var(--graphite); }
+  .datestrip div b { display: block; font-size: 13px; color: var(--ink); }
+  .datestrip .on { background: var(--ink); color: var(--paper); }
+  .datestrip .on b { color: var(--paper); }
+  .keypad { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding-bottom: 22px; }
+  .key { aspect-ratio: 1.15; border-radius: 50%; background: var(--mist); display: grid; place-items: center; font-size: 18px; font-weight: 500; }
+  .key.ok { background: var(--mist); }
+  .emochip { width: 26px; height: 26px; border-radius: 999px; background: var(--chip); display: grid; place-items: center; font-size: 13px; }
+
+  /* report */
+  .budgets { display: flex; gap: 6px; }
+  .budgets .b { flex: 1; border: 1px solid var(--line); border-radius: 12px; padding: 6px 8px; }
+  .budgets .b small { display: block; font-size: 9px; color: var(--graphite); text-transform: uppercase; letter-spacing: .06em; }
+  .budgets .b b { font-size: 11px; }
+  .bar { height: 2px; background: var(--line); margin-top: 5px; border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--ink); }
+  .bar i.over { background: #b3261e; }
+  .donutwrap { position: relative; display: grid; place-items: center; }
+  .donutwrap .center { position: absolute; text-align: center; }
+  .donutwrap .center small { display: block; font-size: 9px; color: var(--graphite); }
+  .donutwrap .center b { font-size: 16px; letter-spacing: -0.02em; }
+  .tip { position: absolute; top: 0; right: 0; width: 112px; background: var(--mist); border-radius: 12px; padding: 7px 8px; font-size: 9.5px; line-height: 1.3; }
+  .tip b { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+  .cat { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .cat .sw { width: 10px; height: 10px; border-radius: 3px; }
+  .cat .n { font-weight: 600; font-size: 11px; }
+  .cat .p { font-size: 10px; color: var(--graphite); }
+  .cat .d { margin-left: auto; font-size: 10px; border-radius: 999px; padding: 1px 6px; background: var(--mist); }
+  .cat .d.up { background: #fde8e6; color: #b3261e; }
+  .cat .d.down { background: #e3f3e8; color: #1f7a3a; }
+  .cat .a { font-weight: 600; font-size: 11px; width: 54px; text-align: right; }
+
+  .widgets { max-width: 1120px; margin: 40px auto 0; }
+  .widgets h2 { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0 0 12px; }
+  .wrow { display: flex; flex-wrap: wrap; gap: 16px; }
+  .w { background: var(--paper); color: var(--ink); border-radius: 20px; padding: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+  .w.small { width: 72px; height: 72px; display: grid; place-items: center; }
+  .w.wide { width: 180px; height: 150px; display: flex; flex-direction: column; justify-content: space-between; }
+  .w small { font-size: 10px; color: var(--graphite); text-transform: uppercase; letter-spacing: .06em; }
+  @media (prefers-reduced-motion: no-preference) { .phone { transition: transform .2s; } .phone:hover { transform: translateY(-4px); } }
+</style>
+
+<header>
+  <h1>Spent</h1>
+  <p>Phase 1 screens from the design spec: onboarding, home, add, report. Monochrome, one accent for the category chip. Example data only.</p>
+</header>
+
+<div class="row">
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span>▪▪▪ ◔</span></div>
+      <div class="body">
+        <div class="cloud">
+          <span class="pill" style="left:52px;top:8px">balance</span>
+          <span class="pill" style="left:0;top:38px">income</span>
+          <span class="pill" style="right:0;top:38px">expenses</span>
+          <span class="pill" style="left:6px;top:86px">fun</span>
+          <span class="pill" style="right:10px;top:86px">food</span>
+          <span class="pill" style="left:4px;top:136px">retire</span>
+          <span class="pill" style="right:4px;top:136px">travel</span>
+          <svg class="mascot" width="110" height="130" viewBox="0 0 110 130" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M55 12c-16 0-26 11-26 26 0 17 11 30 26 30s26-13 26-30c0-15-10-26-26-26z"/>
+            <path d="M31 30c6-10 14-16 24-16s18 6 24 16M48 40h2M60 40h2M50 52c3 2 7 2 10 0"/>
+            <path d="M22 128c0-30 10-50 33-50s33 20 33 50M38 82l-10 42M72 82l10 42"/>
+          </svg>
+        </div>
+        <div class="wordmark">spent</div>
+        <div class="tag">your minimal budgeting app</div>
+        <div class="cta">
+          <div class="btn">Continue with Google</div>
+          <div class="btn ghost">Skip, use offline</div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption>Onboarding</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span>▪▪▪ ◔</span></div>
+      <div class="body" style="gap:6px">
+        <div style="display:flex;justify-content:center;align-items:center;gap:10px;position:relative">
+          <span class="pill">this month ▾</span>
+          <svg style="position:absolute;right:0;width:18px;height:18px;stroke:#111;fill:none;stroke-width:1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        </div>
+        <div class="big" style="text-align:center">₹30,195</div>
+        <canvas id="line" width="224" height="80" style="width:224px;height:80px"></canvas>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--graphite);padding:0 4px"><span>jul</span><span>aug</span><span>sep</span><b style="color:var(--ink)">oct</b><span>nov</span><span>dec</span></div>
+        <div class="daylabel"><span>today</span><span class="num">-₹1,089</span></div>
+        <div class="tx"><div class="emo">🐶</div><div><div class="name">pet care</div><div class="sub">petco</div></div><div class="amt num">-₹799</div></div>
+        <div class="tx"><div class="emo">☕</div><div><div class="name">coffee</div><div class="sub">starbucks</div></div><div class="amt num">-₹290</div></div>
+        <div class="daylabel"><span>yesterday</span><span class="num">+₹4,925</span></div>
+        <div class="tx"><div class="emo">💸</div><div><div class="name">upi received</div><div class="sub">rahul sharma</div></div><div class="amt num in">+₹5,000</div></div>
+        <div class="tx"><div class="emo">🚕</div><div><div class="name">commute</div><div class="sub">uber</div></div><div class="amt num">-₹75</div></div>
+      </div>
+      <div class="tabbar">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="3"/><path d="M16 13h2"/></svg>
+        <div class="fab">+</div>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v8l6 3"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2L10 21h4l.6-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>
+      </div>
+    </div></div>
+    <figcaption>Home</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span>▪▪▪ ◔</span></div>
+      <div class="body">
+        <div style="display:flex;justify-content:center"><div class="seg"><span class="on">expenses</span><span>income</span></div></div>
+        <div class="datestrip">
+          <div>12<b>mon</b></div><div class="on">13<b>tue</b></div><div>14<b>wed</b></div><div>15<b>thu</b></div><div>16<b>fri</b></div>
+        </div>
+        <div class="big" style="text-align:center;margin-top:8px">₹20.00</div>
+        <div style="display:flex;justify-content:center;gap:6px;align-items:center">
+          <span class="emochip">🍔</span><span class="pill fill">burger king</span>
+        </div>
+        <div class="keypad">
+          <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+          <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+          <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+          <div class="key">.</div><div class="key">0</div><div class="key ok">✓</div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption>Add</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span>▪▪▪ ◔</span></div>
+      <div class="body" style="gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="pill soft">october ▾</span>
+          <div class="seg"><span class="on">expenses</span><span>income</span></div>
+        </div>
+        <div class="budgets">
+          <div class="b"><small>week</small><b class="num">2.1k / 2.5k</b><div class="bar"><i style="width:84%"></i></div></div>
+          <div class="b"><small>month</small><b class="num">11.2k / 10k</b><div class="bar"><i class="over" style="width:100%"></i></div></div>
+          <div class="b"><small>year</small><b class="num">98k / 120k</b><div class="bar"><i style="width:82%"></i></div></div>
+        </div>
+        <div class="donutwrap">
+          <canvas id="donut" width="150" height="150" style="width:150px;height:150px"></canvas>
+          <div class="center"><small>total spent</small><b class="num">₹11,240</b></div>
+          <div class="tip"><b>tip</b>Over by ₹1,240. Food delivery is up 40%. Trim it by ₹1,240 to stay in budget.</div>
+        </div>
+        <div class="cat"><span class="sw" style="background:#111"></span><div><div class="n">food delivery</div><div class="p">38% of total</div></div><span class="d up">+40%</span><span class="a num">₹4,270</span></div>
+        <div class="cat"><span class="sw" style="background:#555"></span><div><div class="n">groceries</div><div class="p">24% of total</div></div><span class="d down">-6%</span><span class="a num">₹2,700</span></div>
+        <div class="cat"><span class="sw" style="background:#999"></span><div><div class="n">commute</div><div class="p">19% of total</div></div><span class="d">+2%</span><span class="a num">₹2,140</span></div>
+        <div class="cat"><span class="sw" style="background:#ccc"></span><div><div class="n">shopping</div><div class="p">19% of total</div></div><span class="d up">+12%</span><span class="a num">₹2,130</span></div>
+      </div>
+      <div class="tabbar">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="3"/><path d="M16 13h2"/></svg>
+        <div class="fab">+</div>
+        <svg viewBox="0 0 24 24" style="stroke-width:2.6"><circle cx="12" cy="12" r="8"/><path d="M12 4v8l6 3"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2L10 21h4l.6-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>
+      </div>
+    </div></div>
+    <figcaption>Report</figcaption>
+  </figure>
+
+</div>
+
+<section class="widgets">
+  <h2>Home-screen widgets</h2>
+  <div class="wrow">
+    <div class="w small"><div class="fab" style="width:40px;height:40px;font-size:24px">+</div></div>
+    <div class="w wide">
+      <small>this month</small>
+      <div class="big" style="font-size:24px">₹30,195</div>
+      <div><small>budget 11.2k / 10k</small><div class="bar" style="margin-top:4px"><i class="over" style="width:100%"></i></div></div>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var c = document.getElementById('line'), ctx = c.getContext('2d');
+    var dpr = window.devicePixelRatio || 1; c.width = 224 * dpr; c.height = 80 * dpr; ctx.scale(dpr, dpr);
+    var pts = [52, 48, 50, 44, 30, 26, 32, 40, 46, 38, 30, 34, 42, 48, 50, 56, 60, 54, 46, 42, 44, 50, 58, 62];
+    ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath();
+    pts.forEach(function (y, i) {
+      var x = i * (224 / (pts.length - 1));
+      if (i === 0) ctx.moveTo(x, y); else {
+        var px = (i - 1) * (224 / (pts.length - 1)), py = pts[i - 1], mx = (px + x) / 2;
+        ctx.bezierCurveTo(mx, py, mx, y, x, y);
+      }
+    });
+    ctx.stroke();
+    var tx = 14 * (224 / (pts.length - 1)), ty = pts[14];
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(tx, ty, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+    var d = document.getElementById('donut'), dc = d.getContext('2d');
+    d.width = 150 * dpr; d.height = 150 * dpr; dc.scale(dpr, dpr);
+    var shares = [0.38, 0.24, 0.19, 0.19], greys = ['#111', '#555', '#999', '#ccc'];
+    var start = -Math.PI / 2, gap = 0.06;
+    shares.forEach(function (s, i) {
+      var end = start + s * Math.PI * 2;
+      dc.beginPath(); dc.arc(75, 75, 60, start + gap / 2, end - gap / 2);
+      dc.strokeStyle = greys[i]; dc.lineWidth = i === 0 ? 20 : 16; dc.lineCap = 'butt'; dc.stroke();
+      start = end;
+    });
+  })();
+</script>

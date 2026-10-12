@@ -1,0 +1,97 @@
+package com.anish1050.ledger.data.repo
+
+import android.content.Context
+import com.anish1050.ledger.capture.parser.ParsedTransaction
+import com.anish1050.ledger.data.db.Direction
+import com.anish1050.ledger.data.db.Seed
+import com.anish1050.ledger.data.db.Source
+import com.anish1050.ledger.data.db.TransactionDao
+import com.anish1050.ledger.data.db.TransactionEntity
+import com.anish1050.ledger.data.db.TxState
+import com.anish1050.ledger.widget.WidgetRefresh
+import java.security.MessageDigest
+import java.util.UUID
+
+sealed interface IngestResult {
+    data class Inserted(val id: String, val state: TxState) : IngestResult
+    data object Duplicate : IngestResult
+}
+
+class TransactionRepository(
+    private val context: Context,
+    private val dao: TransactionDao,
+) {
+    suspend fun ingest(parsed: ParsedTransaction, accountId: String = Seed.CASH_ACCOUNT_ID, currency: String = "INR"): IngestResult {
+        val now = System.currentTimeMillis()
+        val entity = TransactionEntity(
+            id = UUID.randomUUID().toString(),
+            accountId = accountId,
+            categoryId = null,
+            amountMinor = parsed.amountMinor,
+            currency = currency,
+            direction = parsed.direction,
+            merchant = parsed.merchant.ifBlank { "unknown" },
+            note = null,
+            occurredAt = parsed.occurredAt,
+            source = parsed.source,
+            confidence = parsed.confidence,
+            state = if (parsed.confidence >= CONFIRM_THRESHOLD) TxState.confirmed else TxState.review,
+            dedupeKey = dedupeKey(parsed.direction, parsed.amountMinor, parsed.last4, parsed.ref ?: parsed.merchant, parsed.occurredAt),
+            createdAt = now,
+            updatedAt = now,
+        )
+        val rowId = dao.insertIgnore(entity)
+        if (rowId == -1L) return IngestResult.Duplicate
+        WidgetRefresh.requestUpdate(context)
+        return IngestResult.Inserted(entity.id, entity.state)
+    }
+
+    suspend fun add(amountMinor: Long, direction: Direction, categoryId: String?, merchant: String, occurredAt: Long, accountId: String = Seed.CASH_ACCOUNT_ID, currency: String = "INR"): String {
+        val now = System.currentTimeMillis()
+        val entity = TransactionEntity(
+            id = UUID.randomUUID().toString(),
+            accountId = accountId,
+            categoryId = categoryId,
+            amountMinor = amountMinor,
+            currency = currency,
+            direction = direction,
+            merchant = merchant.ifBlank { "untitled" },
+            note = null,
+            occurredAt = occurredAt,
+            source = Source.manual,
+            confidence = 1f,
+            state = TxState.confirmed,
+            // Manual entries are never deduped against captures, so the key is the id itself.
+            dedupeKey = "manual:${UUID.randomUUID()}",
+            createdAt = now,
+            updatedAt = now,
+        )
+        dao.insertIgnore(entity)
+        WidgetRefresh.requestUpdate(context)
+        return entity.id
+    }
+
+    suspend fun confirm(id: String, categoryId: String? = null) = edit(id) { it.copy(state = TxState.confirmed, categoryId = categoryId ?: it.categoryId) }
+
+    suspend fun discard(id: String) = edit(id) { it.copy(deleted = true) }
+
+    suspend fun setCategory(id: String, categoryId: String) = edit(id) { it.copy(categoryId = categoryId) }
+
+    private suspend fun edit(id: String, change: (TransactionEntity) -> TransactionEntity) {
+        val current = dao.byId(id) ?: return
+        dao.update(change(current).copy(version = current.version + 1, updatedAt = System.currentTimeMillis()))
+        WidgetRefresh.requestUpdate(context)
+    }
+
+    companion object {
+        const val CONFIRM_THRESHOLD = 0.8f
+
+        // Same payment seen from SMS and from a notification collapses to one
+        // row: amount, direction, account hint and a 2-minute time bucket.
+        fun dedupeKey(direction: Direction, amountMinor: Long, last4: String?, refOrMerchant: String, occurredAt: Long): String {
+            val bucket = occurredAt / 120_000L
+            val raw = "${direction.name}|$amountMinor|${last4.orEmpty()}|${refOrMerchant.lowercase().trim()}|$bucket"
+            return MessageDigest.getInstance("SHA-256").digest(raw.toByteArray()).joinToString("") { "%02x".format(it) }
+        }
+    }
+}

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand name lives only here. Rename the app by changing this string. -->
+    <string name="app_name">Spent</string>
+    <string name="tagline">your minimal budgeting app</string>
+
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="skip_use_offline">Skip, use offline</string>
+    <string name="skip_for_now">Skip for now</string>
+    <string name="next">Next</string>
+    <string name="done">Done</string>
+
+    <string name="budget_title">Set your budget</string>
+    <string name="budget_week">Weekly</string>
+    <string name="budget_month">Monthly</string>
+    <string name="budget_year">Yearly</string>
+
+    <string name="permissions_title">Capture automatically</string>
+    <string name="perm_notifications">Payment notifications</string>
+    <string name="perm_notifications_why">Reads payment confirmations from UPI and bank apps to log them. Text is parsed on this phone and never uploaded.</string>
+    <string name="perm_sms">Bank SMS</string>
+    <string name="perm_sms_why">Reads bank transaction alerts to log debits and credits. Messages stay on this phone.</string>
+    <string name="perm_gallery">Gallery screenshots</string>
+    <string name="perm_gallery_why">Pick a payment screenshot and the amount is read on-device.</string>
+
+    <string name="expenses">expenses</string>
+    <string name="income">income</string>
+    <string name="this_month">this month</string>
+    <string name="today">today</string>
+    <string name="yesterday">yesterday</string>
+    <string name="review_needed">%1$d to review</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_accounts">Accounts</string>
+    <string name="nav_add">Add</string>
+    <string name="nav_report">Report</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="widget_quick_add">Quick add</string>
+    <string name="widget_balance">Balance</string>
+</resources>
