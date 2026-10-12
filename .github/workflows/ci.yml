@@ -59,3 +59,10 @@ jobs:
         with:
           gradle-version: "8.11.1"
       - run: gradle testPlayDebugUnitTest assemblePlayDebug assembleFossDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-debug
+          path: |
+            android/app/build/outputs/apk/play/debug/app-play-debug.apk
+            android/app/build/outputs/apk/foss/debug/app-foss-debug.apk
+          retention-days: 14

@@ -25,23 +25,18 @@ interface TransactionDao {
     )
     fun rows(from: Long, to: Long): Flow<List<TransactionRow>>
 
-    // Daily running balance computed in SQL with a window function; the chart
-    // only ever receives one point per day.
+    // One net amount per day; the running sum happens in the ViewModel because
+    // SQLite window functions only exist from API 30.
     @Query(
         """
-        SELECT day_start,
-               SUM(day_net) OVER (ORDER BY day_start ROWS UNBOUNDED PRECEDING) AS running_balance_minor
-        FROM (
-            SELECT (occurred_at / 86400000) * 86400000 AS day_start,
-                   SUM(CASE direction WHEN 'credit' THEN amount_minor ELSE -amount_minor END) AS day_net
-            FROM transactions
-            WHERE deleted = 0 AND state = 'confirmed' AND occurred_at BETWEEN :from AND :to
-            GROUP BY day_start
-        )
-        ORDER BY day_start
+        SELECT (occurred_at / 86400000) * 86400000 AS day_start,
+               SUM(CASE direction WHEN 'credit' THEN amount_minor ELSE -amount_minor END) AS day_net_minor
+        FROM transactions
+        WHERE deleted = 0 AND state = 'confirmed' AND occurred_at BETWEEN :from AND :to
+        GROUP BY day_start ORDER BY day_start
         """,
     )
-    fun dailyBalance(from: Long, to: Long): Flow<List<DaySum>>
+    fun dailyNet(from: Long, to: Long): Flow<List<DayNet>>
 
     @Query(
         """

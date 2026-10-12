@@ -2,6 +2,7 @@ package com.anish1050.ledger.capture.parser
 
 import com.anish1050.ledger.data.db.Source
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -33,10 +34,10 @@ class RuleEngineFixtureTest {
             val parsed = engine.match(raw)
             val expect = f["expect"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonObject
             if (expect == null) {
-                assertThat(parsed).named(f.str("text")).isNull()
+                assertWithMessage(f.str("text")).that(parsed).isNull()
                 return@forEach
             }
-            assertThat(parsed).named(f.str("text")).isNotNull()
+            assertWithMessage(f.str("text")).that(parsed).isNotNull()
             assertThat(parsed!!.ruleId).isEqualTo(f.str("rule"))
             assertThat(parsed.direction.name).isEqualTo(expect.str("direction"))
             assertThat(parsed.amountMinor).isEqualTo(expect["amount_minor"]!!.jsonPrimitive.longOrNull)

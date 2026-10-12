@@ -18,9 +18,9 @@ data class TransactionRow(
 )
 
 @Immutable
-data class DaySum(
+data class DayNet(
     @ColumnInfo(name = "day_start") val dayStart: Long,
-    @ColumnInfo(name = "running_balance_minor") val runningBalanceMinor: Long,
+    @ColumnInfo(name = "day_net_minor") val dayNetMinor: Long,
 )
 
 @Immutable

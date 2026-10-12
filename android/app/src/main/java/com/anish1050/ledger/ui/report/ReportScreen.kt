@@ -148,6 +148,7 @@ private fun BudgetPill(b: BudgetUi, currency: String, modifier: Modifier, onClic
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun BudgetEditSheet(period: BudgetPeriod, current: Long?, onDismiss: () -> Unit, onSave: (Long) -> Unit) {
     var text by remember { mutableStateOf(current?.let { (it / 100).toString() } ?: "") }
