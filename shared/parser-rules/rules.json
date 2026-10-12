@@ -54,6 +54,20 @@
       "confidence": 0.9
     },
     {
+      "id": "generic-debit",
+      "source": "any",
+      "match": "(?is)(?:₹|Rs\\.?|INR|\\$|€|£)\\s?(?<amount>[\\d,]+(?:\\.\\d{1,2})?).{0,60}?\\b(?:debited|paid|spent|sent|purchase)\\b(?:.{0,40}?\\b(?:to|at)\\s+(?<merchant>[A-Za-z][\\w .&'@-]{1,40}))?",
+      "direction": "debit",
+      "confidence": 0.5
+    },
+    {
+      "id": "generic-credit",
+      "source": "any",
+      "match": "(?is)(?:₹|Rs\\.?|INR|\\$|€|£)\\s?(?<amount>[\\d,]+(?:\\.\\d{1,2})?).{0,60}?\\b(?:credited|received|refund(?:ed)?|cashback)\\b(?:.{0,40}?\\b(?:from|by)\\s+(?<merchant>[A-Za-z][\\w .&'@-]{1,40}))?",
+      "direction": "credit",
+      "confidence": 0.5
+    },
+    {
       "id": "gallery-gpay-paid",
       "source": "gallery",
       "match": "(?is)(?:₹|Rs\\.?)\\s?(?<amount>[\\d,]+(?:\\.\\d{1,2})?).{0,80}?(?:paid to|to)\\s+(?<merchant>[A-Za-z][\\w .&'-]{1,40})",
