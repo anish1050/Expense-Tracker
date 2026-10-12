@@ -5,7 +5,6 @@ import com.anish1050.ledger.data.db.Source
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import java.util.Locale
 
 // Pure function over a compiled ruleset. First matching rule wins, so precise
@@ -30,17 +29,17 @@ class RuleEngine(ruleSet: RuleSet) {
             val rule = compiled.rule
             if (rule.source != "any" && rule.source != raw.source.name) continue
             val m = compiled.regex.find(raw.text) ?: continue
-            val amount = m.groups["amount"]?.value ?: continue
+            val amount = m.group("amount") ?: continue
             val amountMinor = Money.parseToMinor(amount) ?: continue
             if (amountMinor <= 0) continue
             return ParsedTransaction(
                 ruleId = rule.id,
                 direction = rule.direction,
                 amountMinor = amountMinor,
-                merchant = m.groups["merchant"]?.value?.trim().orEmpty(),
-                last4 = m.groups["last4"]?.value,
-                ref = m.groups["ref"]?.value,
-                occurredAt = m.groups["date"]?.value?.let(::parseDate) ?: raw.receivedAt,
+                merchant = m.group("merchant")?.trim().orEmpty(),
+                last4 = m.group("last4"),
+                ref = m.group("ref"),
+                occurredAt = m.group("date")?.let(::parseDate) ?: raw.receivedAt,
                 source = raw.source,
                 confidence = rule.confidence,
             )
@@ -48,15 +47,13 @@ class RuleEngine(ruleSet: RuleSet) {
         return null
     }
 
-    private fun parseDate(text: String): Long? {
-        for (format in DATE_FORMATS) {
-            try {
-                return LocalDate.parse(text, format).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            } catch (_: DateTimeParseException) {
-            }
-        }
-        return null
-    }
+    // Unlike JS, Kotlin throws when a pattern has no group of that name, and
+    // most rules only define a subset of the five groups.
+    private fun MatchResult.group(name: String): String? = runCatching { groups[name]?.value }.getOrNull()
+
+    private fun parseDate(text: String): Long? = DATE_FORMATS.firstNotNullOfOrNull { format ->
+        runCatching { LocalDate.parse(text, format) }.getOrNull()
+    }?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
 
     private companion object {
         val DATE_FORMATS = listOf(

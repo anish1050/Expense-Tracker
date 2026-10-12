@@ -20,8 +20,12 @@ class MoneyAndDedupeTest {
     @Test
     fun formatsIndianGroupingAndSign() {
         assertThat(Money.format(12_345_600L, "INR")).isEqualTo("₹1,23,456")
+        assertThat(Money.format(123_456_700L, "INR")).isEqualTo("₹12,34,567")
         assertThat(Money.format(-29_000L, "INR", withSign = true)).isEqualTo("-₹290")
         assertThat(Money.format(500_000L, "INR", withSign = true)).isEqualTo("+₹5,000")
+        assertThat(Money.format(4_217L, "USD")).isEqualTo("$42.17")
+        assertThat(Money.format(123_456_789L, "USD")).isEqualTo("$1,234,567.89")
+        assertThat(Money.format(250L, "INR")).isEqualTo("₹2.50")
     }
 
     @Test

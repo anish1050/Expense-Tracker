@@ -10,8 +10,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Monochrome palette from the mockup. One warm accent, used only on the
-// category emoji chip.
+// Monochrome palette from the mockup. Chip is the only decorative accent; Credit
+// and Over are semantic (income, over budget) and never used for decoration.
 val Ink = Color(0xFF111111)
 val Paper = Color(0xFFFFFFFF)
 val Mist = Color(0xFFF2F2F0)

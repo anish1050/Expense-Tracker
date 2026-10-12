@@ -71,7 +71,7 @@ fun ReportScreen() {
         item {
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 PillChip(state.monthLabel)
-                Segmented(listOf("expenses", "income"), state.directionIndex, vm::setDirection)
+                Segmented(listOf("expenses", "income"), state.directionIndex, onSelect = vm::setDirection)
             }
         }
         item {
@@ -142,7 +142,7 @@ private fun BudgetPill(b: BudgetUi, currency: String, modifier: Modifier, onClic
             if (b.limitMinor == null) "set" else "${Money.format(b.spentMinor, currency)} / ${Money.format(b.limitMinor, currency)}",
             fontSize = 11.sp, color = Ink, style = MaterialTheme.typography.titleMedium,
         )
-        Box(Modifier.fillMaxWidth().height(2.dp).background(Line).padding(top = 0.dp)) {
+        Box(Modifier.fillMaxWidth().height(2.dp).background(Line)) {
             Box(Modifier.fillMaxWidth(progress).height(2.dp).background(if (over) Over else Ink))
         }
     }
@@ -151,7 +151,7 @@ private fun BudgetPill(b: BudgetUi, currency: String, modifier: Modifier, onClic
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun BudgetEditSheet(period: BudgetPeriod, current: Long?, onDismiss: () -> Unit, onSave: (Long) -> Unit) {
-    var text by remember { mutableStateOf(current?.let { (it / 100).toString() } ?: "") }
+    var text by remember { mutableStateOf(current?.let(Money::toEditableText) ?: "") }
     androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Paper) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("${period.name} budget", style = MaterialTheme.typography.displaySmall)

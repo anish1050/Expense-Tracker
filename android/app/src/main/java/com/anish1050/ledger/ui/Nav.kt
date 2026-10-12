@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.Settings
@@ -44,7 +43,6 @@ object Routes {
     const val REPORT = "report"
     const val REVIEW = "review"
     const val SETTINGS = "settings"
-    const val ACCOUNTS = "accounts"
 }
 
 @Composable
@@ -56,7 +54,6 @@ fun LedgerNavHost(nav: NavHostController, startDestination: String) {
         composable(Routes.REPORT) { ReportScreen() }
         composable(Routes.REVIEW) { ReviewQueueScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.SETTINGS) { SettingsScreen() }
-        composable(Routes.ACCOUNTS) { ReportScreen() }
     }
 }
 
@@ -71,20 +68,19 @@ fun BottomBar(nav: NavHostController) {
         Modifier.fillMaxWidth().background(Paper).navigationBarsPadding().padding(horizontal = 18.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Tab(Icons.AutoMirrored.Outlined.List, current == Routes.HOME, Modifier.weight(1f)) { go(Routes.HOME) }
-        Tab(Icons.Outlined.AccountBalanceWallet, current == Routes.ACCOUNTS, Modifier.weight(1f)) { go(Routes.ACCOUNTS) }
+        BottomTab(Icons.AutoMirrored.Outlined.List, current == Routes.HOME, Modifier.weight(1f)) { go(Routes.HOME) }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             Box(Modifier.size(40.dp).background(Ink, CircleShape), contentAlignment = Alignment.Center) {
                 IconButton(onClick = { nav.navigate(Routes.ADD) }) { Text("+", color = Paper, fontSize = 22.sp) }
             }
         }
-        Tab(Icons.Outlined.PieChart, current == Routes.REPORT, Modifier.weight(1f)) { go(Routes.REPORT) }
-        Tab(Icons.Outlined.Settings, current == Routes.SETTINGS, Modifier.weight(1f)) { go(Routes.SETTINGS) }
+        BottomTab(Icons.Outlined.PieChart, current == Routes.REPORT, Modifier.weight(1f)) { go(Routes.REPORT) }
+        BottomTab(Icons.Outlined.Settings, current == Routes.SETTINGS, Modifier.weight(1f)) { go(Routes.SETTINGS) }
     }
 }
 
 @Composable
-private fun Tab(icon: ImageVector, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun BottomTab(icon: ImageVector, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Box(modifier, contentAlignment = Alignment.Center) {
         IconButton(onClick = onClick) { Icon(icon, contentDescription = null, tint = if (selected) Ink else Graphite) }
     }

@@ -48,8 +48,9 @@ class TransactionRepository(
 
     suspend fun add(amountMinor: Long, direction: Direction, categoryId: String?, merchant: String, occurredAt: Long, accountId: String = Seed.CASH_ACCOUNT_ID, currency: String = "INR"): String {
         val now = System.currentTimeMillis()
+        val id = UUID.randomUUID().toString()
         val entity = TransactionEntity(
-            id = UUID.randomUUID().toString(),
+            id = id,
             accountId = accountId,
             categoryId = categoryId,
             amountMinor = amountMinor,
@@ -62,7 +63,7 @@ class TransactionRepository(
             confidence = 1f,
             state = TxState.confirmed,
             // Manual entries are never deduped against captures, so the key is the id itself.
-            dedupeKey = "manual:${UUID.randomUUID()}",
+            dedupeKey = "manual:$id",
             createdAt = now,
             updatedAt = now,
         )
@@ -75,8 +76,6 @@ class TransactionRepository(
 
     suspend fun discard(id: String) = edit(id) { it.copy(deleted = true) }
 
-    suspend fun setCategory(id: String, categoryId: String) = edit(id) { it.copy(categoryId = categoryId) }
-
     private suspend fun edit(id: String, change: (TransactionEntity) -> TransactionEntity) {
         val current = dao.byId(id) ?: return
         dao.update(change(current).copy(version = current.version + 1, updatedAt = System.currentTimeMillis()))
@@ -87,7 +86,9 @@ class TransactionRepository(
         const val CONFIRM_THRESHOLD = 0.8f
 
         // Same payment seen from SMS and from a notification collapses to one
-        // row: amount, direction, account hint and a 2-minute time bucket.
+        // row: direction, amount, account last4, reference or merchant, and a
+        // 2-minute time bucket. ponytail: a payment whose two alerts straddle a
+        // bucket edge shows twice; widen to a +-1 bucket probe if users report it.
         fun dedupeKey(direction: Direction, amountMinor: Long, last4: String?, refOrMerchant: String, occurredAt: Long): String {
             val bucket = occurredAt / 120_000L
             val raw = "${direction.name}|$amountMinor|${last4.orEmpty()}|${refOrMerchant.lowercase().trim()}|$bucket"

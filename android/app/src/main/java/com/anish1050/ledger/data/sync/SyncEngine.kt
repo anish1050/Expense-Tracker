@@ -24,18 +24,23 @@ class SyncEngine(
     private val json = Json { ignoreUnknownKeys = true }
     private val crypto get() = RowCrypto(auth.backupKey ?: error("backup key missing"))
 
+    // Pushes in pages ordered by updated_at so the cursor only ever advances past
+    // rows that were actually sent; a cut-off page is picked up next time.
     suspend fun push() {
-        val since = cursor(PUSHED_AT)
-        val rows = buildList {
-            db.accountDao().changedSince(since, LIMIT).forEach { add(seal("accounts", it.id, it.version, it.updatedAt, it.deleted, AccountEntity.serializer(), it)) }
-            db.categoryDao().changedSince(since, LIMIT).forEach { add(seal("categories", it.id, it.version, it.updatedAt, it.deleted, CategoryEntity.serializer(), it)) }
-            db.budgetDao().changedSince(since, LIMIT).forEach { add(seal("budgets", budgetRowId(it), it.version, it.updatedAt, it.deleted, BudgetEntity.serializer(), it)) }
-            db.transactionDao().changedSince(since, LIMIT).forEach { add(seal("transactions", it.id, it.version, it.updatedAt, it.deleted, TransactionEntity.serializer(), it)) }
-        }.take(LIMIT)
-        if (rows.isEmpty()) return
-        api.push(auth.deviceId, rows)
-        // Rejected rows have a newer server copy; the next pull brings it down.
-        setCursor(PUSHED_AT, rows.maxOf { it.updatedAt })
+        while (true) {
+            val since = cursor(PUSHED_AT)
+            val rows = buildList {
+                db.accountDao().changedSince(since, LIMIT).forEach { add(seal("accounts", it.id, it.version, it.updatedAt, it.deleted, AccountEntity.serializer(), it)) }
+                db.categoryDao().changedSince(since, LIMIT).forEach { add(seal("categories", it.id, it.version, it.updatedAt, it.deleted, CategoryEntity.serializer(), it)) }
+                db.budgetDao().changedSince(since, LIMIT).forEach { add(seal("budgets", budgetRowId(it), it.version, it.updatedAt, it.deleted, BudgetEntity.serializer(), it)) }
+                db.transactionDao().changedSince(since, LIMIT).forEach { add(seal("transactions", it.id, it.version, it.updatedAt, it.deleted, TransactionEntity.serializer(), it)) }
+            }.sortedBy { it.updatedAt }.take(LIMIT)
+            if (rows.isEmpty()) return
+            api.push(auth.deviceId, rows)
+            // Rejected rows have a newer server copy; the next pull brings it down.
+            setCursor(PUSHED_AT, rows.last().updatedAt)
+            if (rows.size < LIMIT) return
+        }
     }
 
     suspend fun pull() {
@@ -43,14 +48,14 @@ class SyncEngine(
         while (true) {
             val page = api.pull(since)
             if (page.rows.isEmpty()) break
-            apply(page.rows)
+            applyPulledRows(page.rows)
             since = page.nextSince
             setCursor(PULLED_AT, since)
             if (page.rows.size < LIMIT) break
         }
     }
 
-    private suspend fun apply(rows: List<SyncRow>) {
+    private suspend fun applyPulledRows(rows: List<SyncRow>) {
         val accounts = mutableListOf<AccountEntity>()
         val categories = mutableListOf<CategoryEntity>()
         val budgets = mutableListOf<BudgetEntity>()

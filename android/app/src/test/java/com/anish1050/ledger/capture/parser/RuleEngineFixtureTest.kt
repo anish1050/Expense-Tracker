@@ -21,8 +21,8 @@ class RuleEngineFixtureTest {
 
     @Test
     fun everyFixtureParsesAsExpected() {
-        val fixtures = json.parseToJsonElement(resource("fixtures/india-upi.json")).jsonArray
-        assertThat(fixtures).isNotEmpty()
+        val fixtures = FIXTURE_FILES.flatMap { json.parseToJsonElement(resource("fixtures/$it")).jsonArray }
+        assertThat(fixtures.size).isAtLeast(30)
         fixtures.forEach { element ->
             val f = element.jsonObject
             val raw = RawCapture(
@@ -41,7 +41,7 @@ class RuleEngineFixtureTest {
             assertThat(parsed!!.ruleId).isEqualTo(f.str("rule"))
             assertThat(parsed.direction.name).isEqualTo(expect.str("direction"))
             assertThat(parsed.amountMinor).isEqualTo(expect["amount_minor"]!!.jsonPrimitive.longOrNull)
-            assertThat(parsed.merchant).isEqualTo(expect.str("merchant"))
+            expect["merchant"]?.jsonPrimitive?.contentOrNull?.let { assertThat(parsed.merchant).isEqualTo(it) }
             expect["last4"]?.jsonPrimitive?.contentOrNull?.let { assertThat(parsed.last4).isEqualTo(it) }
             expect["ref"]?.jsonPrimitive?.contentOrNull?.let { assertThat(parsed.ref).isEqualTo(it) }
             assertThat(parsed.confidence).isWithin(0.001f).of(expect["confidence"]!!.jsonPrimitive.content.toFloat())
@@ -56,6 +56,11 @@ class RuleEngineFixtureTest {
     }
 
     private fun JsonObject.str(key: String) = this[key]!!.jsonPrimitive.content
+
+    private companion object {
+        // Keep in step with shared/parser-rules/fixtures; the backend test globs the folder.
+        val FIXTURE_FILES = listOf("india-upi.json", "india-banks.json", "international.json")
+    }
 
     private fun resource(path: String): String =
         checkNotNull(javaClass.classLoader!!.getResourceAsStream(path)) { "missing test resource $path" }.bufferedReader().use { it.readText() }

@@ -14,9 +14,11 @@ import java.util.concurrent.TimeUnit
 
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        val c = applicationContext.container
-        if (!c.authStore.isSignedIn || c.authStore.backupKey == null) return Result.success()
-        val engine = SyncEngine(c.db, c.api, c.authStore)
+        val container = applicationContext.container
+        // Rule updates ride along with the periodic sync so parsers improve without a release.
+        runCatching { container.ruleStore.refresh() }
+        if (!container.authStore.isSignedIn || container.authStore.backupKey == null) return Result.success()
+        val engine = SyncEngine(container.db, container.api, container.authStore)
         return runCatching { engine.push(); engine.pull() }.fold({ Result.success() }, { Result.retry() })
     }
 

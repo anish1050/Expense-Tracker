@@ -74,9 +74,9 @@ fun AddExpenseScreen(onDone: () -> Unit) {
         uri ?: return@rememberLauncherForActivityResult
         scope.launch {
             when (val outcome = scanner.scan(uri)) {
-                is ScanOutcome.Parsed -> { scanner.ingest(outcome.transaction); onDone() }
-                is ScanOutcome.AmountOnly -> amount = Money.format(outcome.amountMinor, "INR").filter { it.isDigit() || it == '.' }
-                ScanOutcome.Nothing -> Unit
+                is ScanOutcome.Parsed -> { context.container.transactions.ingest(outcome.transaction); onDone() }
+                is ScanOutcome.AmountOnly -> amount = Money.toEditableText(outcome.amountMinor)
+                ScanOutcome.NoMatch -> Unit
             }
         }
     }

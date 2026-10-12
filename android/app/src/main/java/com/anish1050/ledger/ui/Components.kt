@@ -28,7 +28,7 @@ fun PillChip(text: String, modifier: Modifier = Modifier, filled: Boolean = fals
 }
 
 @Composable
-fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun Segmented(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
     Row(modifier.background(Mist, Pill).padding(3.dp)) {
         options.forEachIndexed { index, label ->
             val on = index == selected

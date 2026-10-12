@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -40,10 +39,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-private val Ink = ColorProvider(Color(0xFF111111))
-private val Paper = ColorProvider(Color(0xFFFFFFFF))
-private val Graphite = ColorProvider(Color(0xFF777777))
-private val Mist = ColorProvider(Color(0xFFF2F2F0))
+private val Ink = ColorProvider(com.anish1050.ledger.ui.theme.Ink)
+private val Paper = ColorProvider(com.anish1050.ledger.ui.theme.Paper)
+private val Graphite = ColorProvider(com.anish1050.ledger.ui.theme.Graphite)
+private val Mist = ColorProvider(com.anish1050.ledger.ui.theme.Mist)
+private val OverBudget = ColorProvider(com.anish1050.ledger.ui.theme.Over)
 
 object WidgetRefresh {
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -53,13 +53,15 @@ object WidgetRefresh {
 }
 
 class QuickAddWidget : GlanceAppWidget() {
-    override suspend fun provideGlance(context: Context, id: GlanceId) = provideContent {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("ledger://add"), context, MainActivity::class.java)
-        Box(
-            modifier = GlanceModifier.fillMaxSize().background(Ink).cornerRadius(28.dp).clickable(actionStartActivity(intent)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("+", style = TextStyle(color = Paper, fontSize = 28.sp, fontWeight = FontWeight.Medium))
+        provideContent {
+            Box(
+                modifier = GlanceModifier.fillMaxSize().background(Ink).cornerRadius(28.dp).clickable(actionStartActivity(intent)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("+", style = TextStyle(color = Paper, fontSize = 28.sp, fontWeight = FontWeight.Medium))
+            }
         }
     }
 }
@@ -93,7 +95,7 @@ class BalanceWidget : GlanceAppWidget() {
                         LinearProgressIndicator(
                             progress = progress,
                             modifier = GlanceModifier.height(3.dp),
-                            color = if (over) ColorProvider(Color(0xFFB3261E)) else Ink,
+                            color = if (over) OverBudget else Ink,
                             backgroundColor = Mist,
                         )
                     } else {
