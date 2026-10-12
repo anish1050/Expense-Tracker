@@ -1,0 +1,58 @@
+[
+  {
+    "rule": "gpay-paid-notification",
+    "source": "notification",
+    "sender": "com.google.android.apps.nbu.paisa.user",
+    "text": "₹249.00 paid to Burger King",
+    "expect": { "direction": "debit", "amount_minor": 24900, "merchant": "Burger King", "confidence": 0.95 }
+  },
+  {
+    "rule": "gpay-received-notification",
+    "source": "notification",
+    "sender": "com.google.android.apps.nbu.paisa.user",
+    "text": "₹5,000.00 received from Rahul Sharma",
+    "expect": { "direction": "credit", "amount_minor": 500000, "merchant": "Rahul Sharma", "confidence": 0.95 }
+  },
+  {
+    "rule": "phonepe-paid-notification",
+    "source": "notification",
+    "sender": "com.phonepe.app",
+    "text": "You paid ₹120 to Metro Cash & Carry.",
+    "expect": { "direction": "debit", "amount_minor": 12000, "merchant": "Metro Cash & Carry", "confidence": 0.9 }
+  },
+  {
+    "rule": "hdfc-upi-debit-sms",
+    "source": "sms",
+    "sender": "VM-HDFCBK",
+    "text": "Rs.249.00 debited from a/c **1234 on 12-10-26 to VPA burgerking@ybl ref 628812345678. Not you? Call 18002586161",
+    "expect": { "direction": "debit", "amount_minor": 24900, "last4": "1234", "merchant": "burgerking@ybl", "ref": "628812345678", "confidence": 0.95 }
+  },
+  {
+    "rule": "hdfc-credit-sms",
+    "source": "sms",
+    "sender": "VM-HDFCBK",
+    "text": "Rs.85,000.00 credited to a/c **1234 on 01-10-26 by NEFT ACME PVT LTD SALARY ref N275261234567",
+    "expect": { "direction": "credit", "amount_minor": 8500000, "last4": "1234", "merchant": "ACME PVT LTD SALARY", "ref": "N275261234567", "confidence": 0.95 }
+  },
+  {
+    "rule": "sbi-upi-debit-sms",
+    "source": "sms",
+    "sender": "AD-SBIUPI",
+    "text": "Dear UPI user A/C X5678 debited by 75.0 on date 12Oct26 trf to Swiggy Refno 428812345678. If not u? call 1800111109. -SBI",
+    "expect": { "direction": "debit", "amount_minor": 7500, "last4": "5678", "merchant": "Swiggy", "ref": "428812345678", "confidence": 0.9 }
+  },
+  {
+    "rule": null,
+    "source": "sms",
+    "sender": "VM-HDFCBK",
+    "text": "Your OTP for login is 482913. Do not share it with anyone.",
+    "expect": null
+  },
+  {
+    "rule": null,
+    "source": "notification",
+    "sender": "com.whatsapp",
+    "text": "₹249.00 paid to Burger King",
+    "expect": null
+  }
+]
