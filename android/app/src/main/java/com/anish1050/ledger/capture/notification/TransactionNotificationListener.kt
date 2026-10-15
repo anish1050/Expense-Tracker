@@ -12,6 +12,14 @@ import com.anish1050.ledger.data.db.Source
 
 class TransactionNotificationListener : NotificationListenerService() {
 
+    // Android unbinds the listener across reboots, app updates and process
+    // death; payments notified in that gap would be lost. On reconnect, read
+    // whatever is still in the shade. Re-reading one already captured is a
+    // no-op: the dedupe key comes from the same amount and post time.
+    override fun onListenerConnected() {
+        runCatching { activeNotifications }.getOrNull()?.forEach(::onNotificationPosted)
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val engine = container.ruleStore.engine.value
         // Cheap package check first; the engine may not be loaded yet on a cold

@@ -1,0 +1,45 @@
+[
+  {
+    "rule": "gallery-paid-ocr",
+    "source": "gallery",
+    "sender": "gallery",
+    "text": "Payment successful\n349.00\nPaid to Dominos Pizza\nUPI transaction ID 528811223344",
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 34900,
+      "merchant": "Dominos Pizza",
+      "confidence": 0.6
+    }
+  },
+  {
+    "rule": "gallery-gpay-paid",
+    "source": "gallery",
+    "sender": "gallery",
+    "text": "₹ 1,249.50\nPaid to Reliance Fresh\nCompleted",
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 124950,
+      "merchant": "Reliance Fresh",
+      "confidence": 0.7
+    }
+  },
+  {
+    "rule": "gallery-received-ocr",
+    "source": "gallery",
+    "sender": "gallery",
+    "text": "Payment received\n2,500.00\nReceived from Priya Sharma\n15 Oct 2026",
+    "expect": {
+      "direction": "credit",
+      "amount_minor": 250000,
+      "merchant": "Priya Sharma",
+      "confidence": 0.6
+    }
+  },
+  {
+    "rule": null,
+    "source": "gallery",
+    "sender": "gallery",
+    "text": "Order #40213 delivered on 15 Oct\nThanks for shopping with us",
+    "expect": null
+  }
+]

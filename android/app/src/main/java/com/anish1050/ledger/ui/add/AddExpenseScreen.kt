@@ -30,8 +30,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -70,6 +70,7 @@ import java.time.format.DateTimeFormatter
 
 private val KEYS = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫")
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddExpenseScreen(onDone: () -> Unit) {
     val context = LocalContext.current
@@ -129,8 +130,14 @@ fun AddExpenseScreen(onDone: () -> Unit) {
             contentAlignment = Alignment.Center,
             label = "amount",
         ) { text -> Text(text, style = MaterialTheme.typography.displayLarge, textAlign = TextAlign.Center) }
-        LazyRow(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
-            items(categories, key = { it.id }) { c ->
+        // Wraps onto a second line instead of scrolling sideways, so no
+        // category is ever half-hidden at the screen edge.
+        FlowRow(
+            Modifier.fillMaxWidth().padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            categories.forEach { c ->
                 val on = c.id == categoryId
                 val bg by animateColorAsState(if (on) Chip else Mist, label = "category")
                 val scale by animateFloatAsState(if (on) 1.15f else 1f, Motion.press, label = "categoryScale")

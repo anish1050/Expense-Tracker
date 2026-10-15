@@ -36,11 +36,13 @@ class ReceiptOcrScanner(private val context: Context) {
         val engine = context.container.ruleStore.load()
         engine.match(RawCapture(Source.gallery, "gallery", text, System.currentTimeMillis()))?.let { return ScanOutcome.Parsed(it) }
 
-        val largest = AMOUNT.findAll(text).mapNotNull { Money.parseToMinor(it.groupValues[1]) }.maxOrNull()
+        val largest = AMOUNT.findAll(text).mapNotNull { m -> Money.parseToMinor(m.groupValues[1].ifEmpty { m.groupValues[2] }) }.maxOrNull()
         return if (largest != null && largest > 0) ScanOutcome.AmountOnly(largest) else ScanOutcome.NoMatch
     }
 
     private companion object {
-        val AMOUNT = Regex("""(?:₹|Rs\.?|INR)\s?([\d,]+(?:\.\d{1,2})?)""")
+        // OCR usually drops or misreads the rupee sign, so a bare two-decimal
+        // number also counts as an amount for the keypad prefill.
+        val AMOUNT = Regex("""(?:₹|Rs\.?|INR)\s?([\d,]+(?:\.\d{1,2})?)|\b(\d{1,3}(?:,\d{2,3})*\.\d{2})\b""")
     }
 }

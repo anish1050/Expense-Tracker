@@ -4,133 +4,244 @@
     "source": "sms",
     "sender": "JD-HDFCBK-S",
     "text": "Sent Rs.1500.00 From HDFC Bank A/C x1234 To Zomato On 12/10/26 Ref 628812345679 Not You? Call 18002586161/SMS BLOCK UPI to 7308080808",
-    "expect": { "direction": "debit", "amount_minor": 150000, "last4": "1234", "merchant": "Zomato", "ref": "628812345679", "confidence": 0.95 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 150000,
+      "last4": "1234",
+      "merchant": "Zomato",
+      "ref": "628812345679",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "hdfc-card-spent-sms",
     "source": "sms",
     "sender": "VM-HDFCBK",
     "text": "Rs.2,349.00 spent on HDFC Bank Credit Card xx4321 at AMAZON PAY INDIA on 11-10-2026 12:40:11. Avl bal Rs.47,651.00. Not you? Call 18002586161",
-    "expect": { "direction": "debit", "amount_minor": 234900, "last4": "4321", "merchant": "AMAZON PAY INDIA", "confidence": 0.95 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 234900,
+      "last4": "4321",
+      "merchant": "AMAZON PAY INDIA",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "hdfc-atm-sms",
     "source": "sms",
     "sender": "VM-HDFCBK",
     "text": "Rs.5000.00 withdrawn at HDFC Bank ATM on 10-10-26 from A/c xx1234. Avl bal Rs 12,000.00",
-    "expect": { "direction": "debit", "amount_minor": 500000, "last4": "1234", "confidence": 0.95 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 500000,
+      "last4": "1234",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "hdfc-autopay-sms",
     "source": "sms",
     "sender": "VM-HDFCBK",
     "text": "Rs.199.00 has been debited from your HDFC Bank A/c xx1234 via E-Mandate for NETFLIX ENTERTAINMENT SERVICES on 09-10-26.",
-    "expect": { "direction": "debit", "amount_minor": 19900, "merchant": "NETFLIX ENTERTAINMENT SERVICES", "confidence": 0.9 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 19900,
+      "merchant": "NETFLIX ENTERTAINMENT SERVICES",
+      "confidence": 0.9
+    }
   },
   {
     "rule": "sbi-upi-credit-sms",
     "source": "sms",
     "sender": "AD-SBIUPI",
     "text": "Dear SBI User, your A/C X5678 credited by Rs.2,000.00 on date 12Oct26 trf from PRIYA SHARMA Ref no 428899887766 -SBI",
-    "expect": { "direction": "credit", "amount_minor": 200000, "last4": "5678", "merchant": "PRIYA SHARMA", "ref": "428899887766", "confidence": 0.95 }
+    "expect": {
+      "direction": "credit",
+      "amount_minor": 200000,
+      "last4": "5678",
+      "merchant": "PRIYA SHARMA",
+      "ref": "428899887766",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "sbi-atm-sms",
     "source": "sms",
     "sender": "BZ-SBIINB-S",
     "text": "Rs 3000.00 withdrawn at SBI ATM S1NW000123 from A/c XX5678 on 08Oct26 at 18:32. Avl Bal Rs 9,000.00. -SBI",
-    "expect": { "direction": "debit", "amount_minor": 300000, "last4": "5678", "confidence": 0.9 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 300000,
+      "last4": "5678",
+      "confidence": 0.9
+    }
   },
   {
     "rule": "icici-debit-sms",
     "source": "sms",
     "sender": "AX-ICICIB",
     "text": "ICICI Bank Acct XX987 debited for Rs 450.00 on 12-Oct-26; swiggy@icici credited. UPI:628812345680. Call 18002662 for dispute. SMS BLOCK 987 to 9215676766.",
-    "expect": { "direction": "debit", "amount_minor": 45000, "last4": "987", "merchant": "swiggy@icici", "confidence": 0.95 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 45000,
+      "last4": "987",
+      "merchant": "swiggy@icici",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "icici-credit-sms",
     "source": "sms",
     "sender": "AX-ICICIB",
     "text": "ICICI Bank Acct XX987 is credited with Rs 1,20,000.00 on 01-Oct-26 by NEFT from ACME TECHNOLOGIES PVT LTD. Avl Bal Rs 1,45,000.00.",
-    "expect": { "direction": "credit", "amount_minor": 12000000, "last4": "987", "merchant": "ACME TECHNOLOGIES PVT LTD", "confidence": 0.95 }
+    "expect": {
+      "direction": "credit",
+      "amount_minor": 12000000,
+      "last4": "987",
+      "merchant": "ACME TECHNOLOGIES PVT LTD",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "icici-card-sms",
     "source": "sms",
     "sender": "AX-ICICIB",
     "text": "INR 1,299.00 spent using ICICI Bank Card XX6543 on 11-Oct-26 on FLIPKART INTERNET. Avl Limit: INR 98,701.00. If not you, call 18002662.",
-    "expect": { "direction": "debit", "amount_minor": 129900, "last4": "6543", "merchant": "FLIPKART INTERNET", "confidence": 0.95 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 129900,
+      "last4": "6543",
+      "merchant": "FLIPKART INTERNET",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "axis-debit-sms",
     "source": "sms",
     "sender": "AD-AXISBK",
     "text": "INR 320.00 debited\nA/c no. XX2468\n12-10-26 09:15:22\nUPI/P2M/628899001122/BLINKIT COMMERCE\nNot you? SMS BLOCKUPI Cust ID to 919951860002 - Axis Bank",
-    "expect": { "direction": "debit", "amount_minor": 32000, "last4": "2468", "merchant": "BLINKIT COMMERCE", "confidence": 0.9 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 32000,
+      "last4": "2468",
+      "merchant": "BLINKIT COMMERCE",
+      "confidence": 0.9
+    }
   },
   {
     "rule": "axis-card-sms",
     "source": "sms",
     "sender": "AD-AXISBK",
     "text": "Rs 899.00 spent on Axis Bank Credit Card XX1357 at UBER INDIA on 10-10-26 20:11. Avl Lmt Rs 1,99,101. SMS BLOCK 1357 to 919951860002 if not done by you.",
-    "expect": { "direction": "debit", "amount_minor": 89900, "last4": "1357", "merchant": "UBER INDIA", "confidence": 0.95 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 89900,
+      "last4": "1357",
+      "merchant": "UBER INDIA",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "kotak-debit-sms",
     "source": "sms",
     "sender": "VK-KOTAKB",
     "text": "Sent Rs.250.00 from Kotak Bank AC X8642 to coffeeday@ybl on 12-10-26.UPI Ref 628812345681. Not you, kotak.com/fraud",
-    "expect": { "direction": "debit", "amount_minor": 25000, "last4": "8642", "merchant": "coffeeday@ybl", "confidence": 0.95 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 25000,
+      "last4": "8642",
+      "merchant": "coffeeday@ybl",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "kotak-credit-sms",
     "source": "sms",
     "sender": "VK-KOTAKB",
     "text": "Received Rs.10,000.00 in your Kotak Bank AC X8642 from RAHUL SHARMA on 11-10-26.UPI Ref:628812345682.",
-    "expect": { "direction": "credit", "amount_minor": 1000000, "last4": "8642", "merchant": "RAHUL SHARMA", "confidence": 0.95 }
+    "expect": {
+      "direction": "credit",
+      "amount_minor": 1000000,
+      "last4": "8642",
+      "merchant": "RAHUL SHARMA",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "pnb-debit-sms",
     "source": "sms",
     "sender": "AD-PNBSMS",
     "text": "A/c XX3344 Debited for Rs.1,100.00 on 11-10-2026 towards IRCTC TICKETING. Bal Rs.22,900.00. Not you? Call 18001802222 -PNB",
-    "expect": { "direction": "debit", "amount_minor": 110000, "last4": "3344", "merchant": "IRCTC TICKETING", "confidence": 0.9 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 110000,
+      "last4": "3344",
+      "merchant": "IRCTC TICKETING",
+      "confidence": 0.9
+    }
   },
   {
     "rule": "bob-credit-sms",
     "source": "sms",
     "sender": "BW-BOBTXN",
     "text": "Rs.500.00 is credited to A/c XX7788 by UPI from ANJALI MEHTA. Avl Bal Rs.8,500.00 -Bank of Baroda",
-    "expect": { "direction": "credit", "amount_minor": 50000, "last4": "7788", "merchant": "ANJALI MEHTA", "confidence": 0.85 }
+    "expect": {
+      "direction": "credit",
+      "amount_minor": 50000,
+      "last4": "7788",
+      "merchant": "ANJALI MEHTA",
+      "confidence": 0.85
+    }
   },
   {
     "rule": "amex-charge-sms",
     "source": "sms",
     "sender": "AD-MYAMEX",
     "text": "A charge of INR 4,500.00 has been made on your American Express Card No. ***12345 at TAJ HOTELS on 10 Oct 2026 at 21:05 IST.",
-    "expect": { "direction": "debit", "amount_minor": 450000, "last4": "12345", "merchant": "TAJ HOTELS", "confidence": 0.95 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 450000,
+      "last4": "12345",
+      "merchant": "TAJ HOTELS",
+      "confidence": 0.95
+    }
   },
   {
     "rule": "india-refund-sms",
     "source": "sms",
     "sender": "VM-HDFCBK",
     "text": "Dear Customer, refund of Rs.799.00 from MYNTRA DESIGNS has been credited to your HDFC Bank A/c xx1234 on 09-10-26.",
-    "expect": { "direction": "credit", "amount_minor": 79900, "merchant": "MYNTRA DESIGNS", "confidence": 0.9 }
+    "expect": {
+      "direction": "credit",
+      "amount_minor": 79900,
+      "merchant": "MYNTRA DESIGNS",
+      "confidence": 0.9
+    }
   },
   {
     "rule": "bankapp-debit-notification",
     "source": "notification",
     "sender": "com.csam.icici.bank.imobile",
     "text": "Transaction alert ₹640.00 debited from account **0987 at BIG BAZAAR",
-    "expect": { "direction": "debit", "amount_minor": 64000, "last4": "0987", "merchant": "BIG BAZAAR", "confidence": 0.8 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 64000,
+      "last4": "0987",
+      "merchant": "BIG BAZAAR",
+      "confidence": 0.8
+    }
   },
   {
     "rule": "generic-debit",
     "source": "sms",
     "sender": "AX-UNKNWN-T",
     "text": "Dear customer, INR 275.00 has been debited from your account for payment to LOCAL GROCER. Thank you.",
-    "expect": { "direction": "debit", "amount_minor": 27500, "merchant": "LOCAL GROCER", "confidence": 0.5 }
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 27500,
+      "merchant": "LOCAL GROCER",
+      "confidence": 0.5
+    }
   },
   {
     "rule": null,
@@ -138,5 +249,18 @@
     "sender": "AX-UNKNWN-P",
     "text": "Rs 500 cashback on your next recharge! Pay via UPI today.",
     "expect": null
+  },
+  {
+    "rule": "hdfc-upi-debit-sms",
+    "source": "sms",
+    "sender": "VMHDFCBK",
+    "text": "Rs.249.00 debited from a/c **1234 on 15-10-26 to VPA burgerking@ybl ref 628812345678. Not you? Call 18002586161",
+    "expect": {
+      "direction": "debit",
+      "amount_minor": 24900,
+      "last4": "1234",
+      "merchant": "burgerking@ybl",
+      "confidence": 0.95
+    }
   }
 ]

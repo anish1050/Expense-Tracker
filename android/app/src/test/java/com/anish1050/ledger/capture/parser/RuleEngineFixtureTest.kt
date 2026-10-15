@@ -59,7 +59,7 @@ class RuleEngineFixtureTest {
 
     private companion object {
         // Keep in step with shared/parser-rules/fixtures; the backend test globs the folder.
-        val FIXTURE_FILES = listOf("india-upi.json", "india-banks.json", "international.json")
+        val FIXTURE_FILES = listOf("india-upi.json", "india-banks.json", "international.json", "gallery-ocr.json")
     }
 
     private fun resource(path: String): String =
