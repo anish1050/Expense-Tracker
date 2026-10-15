@@ -112,6 +112,7 @@ class SyncEngine(
 
         // Budgets are keyed by period, not UUID; map to a stable UUID per period so the server's row_id validation holds.
         fun budgetRowId(period: BudgetPeriod) = when (period) {
+            BudgetPeriod.day -> "00000000-0000-4000-8000-0000000000b0"
             BudgetPeriod.week -> "00000000-0000-4000-8000-0000000000b1"
             BudgetPeriod.month -> "00000000-0000-4000-8000-0000000000b2"
             BudgetPeriod.year -> "00000000-0000-4000-8000-0000000000b3"

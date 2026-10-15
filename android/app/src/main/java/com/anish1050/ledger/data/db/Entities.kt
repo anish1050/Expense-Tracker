@@ -13,7 +13,7 @@ import kotlinx.serialization.Transient
 @Serializable enum class Source { manual, notification, sms, gallery }
 @Serializable enum class TxState { confirmed, review }
 @Serializable enum class AccountKind { bank, upi, card, cash }
-@Serializable enum class BudgetPeriod { week, month, year }
+@Serializable enum class BudgetPeriod { day, week, month, year }
 
 // Entities double as the sync wire format (snake_case JSON), so the Swift
 // client can decode the same rows after decrypting them.

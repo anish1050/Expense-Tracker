@@ -55,9 +55,11 @@ class ReportViewModel(private val container: AppContainer) : ViewModel() {
         val prev = dao.categoryTotals(dir, prevMonth.from, prevMonth.to, Seed.UNCATEGORISED_ID)
         val prevById = prev.associate { it.categoryId to it.totalMinor }
         val limits = budgets.associate { it.period to it.amountMinor }
+        val day = Period.day()
         val week = Period.week()
         val year = Period.year()
         val spent = mapOf(
+            BudgetPeriod.day to dao.sumBetween(Direction.debit, day.from, day.to),
             BudgetPeriod.week to dao.sumBetween(Direction.debit, week.from, week.to),
             BudgetPeriod.month to dao.sumBetween(Direction.debit, month.from, month.to),
             BudgetPeriod.year to dao.sumBetween(Direction.debit, year.from, year.to),
@@ -81,7 +83,11 @@ class ReportViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun setBudget(period: BudgetPeriod, amountMinor: Long) {
-        viewModelScope.launch { container.budgets.set(period, amountMinor) }
+        viewModelScope.launch {
+            container.budgets.set(period, amountMinor)
+            // Lowering a budget below what is already spent counts as going over.
+            runCatching { container.budgetAlerts.check() }
+        }
     }
 
     companion object {

@@ -36,10 +36,14 @@ private val scheme = lightColorScheme(
     error = Over,
 )
 
+// Tabular figures keep amounts from jiggling sideways while they count up, and
+// tight tracking on the large sizes gives the dense, iOS-style display look.
+private const val TABULAR = "tnum"
+
 private val type = Typography(
-    displayLarge = TextStyle(fontSize = 40.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1.2).sp),
-    displaySmall = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp),
-    titleMedium = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+    displayLarge = TextStyle(fontSize = 44.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1.6).sp, fontFeatureSettings = TABULAR),
+    displaySmall = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1.0).sp),
+    titleMedium = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = TABULAR),
     bodyMedium = TextStyle(fontSize = 14.sp),
     bodySmall = TextStyle(fontSize = 12.sp, color = Graphite),
     labelSmall = TextStyle(fontSize = 10.sp, letterSpacing = 0.6.sp, color = Graphite),

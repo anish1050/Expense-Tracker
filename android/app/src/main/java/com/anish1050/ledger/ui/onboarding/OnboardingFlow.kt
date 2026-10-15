@@ -1,7 +1,11 @@
 package com.anish1050.ledger.ui.onboarding
 
 import android.content.Context
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,6 +21,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -32,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,6 +50,8 @@ import com.anish1050.ledger.container
 import com.anish1050.ledger.data.Money
 import com.anish1050.ledger.data.db.BudgetPeriod
 import com.anish1050.ledger.ui.PillChip
+import com.anish1050.ledger.ui.motion.Haptic
+import com.anish1050.ledger.ui.motion.pressable
 import com.anish1050.ledger.ui.theme.Ink
 import com.anish1050.ledger.ui.theme.Line
 import com.anish1050.ledger.ui.theme.Paper
@@ -70,7 +79,7 @@ private fun WelcomeStep(onContinue: () -> Unit) {
     val scope = rememberCoroutineScope()
     val signIn = remember { GoogleSignIn(context) }
 
-    Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().height(260.dp)) {
             PillChip("balance", Modifier.align(Alignment.TopCenter))
             PillChip("income", Modifier.align(Alignment.TopStart).padding(top = 36.dp))
@@ -95,12 +104,14 @@ private fun WelcomeStep(onContinue: () -> Unit) {
 private fun BudgetSetupStep(onNext: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var day by remember { mutableStateOf("") }
     var week by remember { mutableStateOf("") }
     var month by remember { mutableStateOf("") }
     var year by remember { mutableStateOf("") }
 
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.budget_title), style = androidx.compose.material3.MaterialTheme.typography.displaySmall)
+        AmountField(stringResource(R.string.budget_day), day) { day = it }
         AmountField(stringResource(R.string.budget_week), week) { week = it }
         AmountField(stringResource(R.string.budget_month), month) { month = it }
         AmountField(stringResource(R.string.budget_year), year) { year = it }
@@ -108,6 +119,7 @@ private fun BudgetSetupStep(onNext: () -> Unit) {
         PrimaryButton(stringResource(R.string.next)) {
             scope.launch {
                 val budgets = context.container.budgets
+                Money.parseToMinor(day)?.takeIf { it > 0 }?.let { budgets.set(BudgetPeriod.day, it) }
                 Money.parseToMinor(week)?.takeIf { it > 0 }?.let { budgets.set(BudgetPeriod.week, it) }
                 Money.parseToMinor(month)?.takeIf { it > 0 }?.let { budgets.set(BudgetPeriod.month, it) }
                 Money.parseToMinor(year)?.takeIf { it > 0 }?.let { budgets.set(BudgetPeriod.year, it) }
@@ -124,13 +136,17 @@ private fun PermissionsStep(onDone: () -> Unit) {
     val scope = rememberCoroutineScope()
     var notifications by remember { mutableStateOf(TransactionNotificationListener.isEnabled(context)) }
     var sms by remember { mutableStateOf(SmsCapture.isGranted(context)) }
+    var alerts by remember {
+        mutableStateOf(Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
+    }
+    val alertsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { alerts = it }
     val smsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         sms = granted.values.all { it }
         // App-scoped so tapping Done right away cannot cancel the import.
         if (sms) context.container.scope.launch { SmsCapture.backfill(context) }
     }
 
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.permissions_title), style = androidx.compose.material3.MaterialTheme.typography.displaySmall)
         PermissionCard(stringResource(R.string.perm_notifications), stringResource(R.string.perm_notifications_why), notifications) {
             context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -140,6 +156,11 @@ private fun PermissionsStep(onDone: () -> Unit) {
             PermissionCard(stringResource(R.string.perm_sms), stringResource(R.string.perm_sms_why), sms) { smsLauncher.launch(SmsCapture.permissions) }
         }
         PermissionCard(stringResource(R.string.perm_gallery), stringResource(R.string.perm_gallery_why), true) {}
+        if (Build.VERSION.SDK_INT >= 33) {
+            PermissionCard(stringResource(R.string.perm_alerts), stringResource(R.string.perm_alerts_why), alerts) {
+                alertsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
         Spacer(Modifier.weight(1f))
         PrimaryButton(stringResource(R.string.done), onDone)
     }
@@ -162,7 +183,7 @@ private fun AmountField(label: String, value: String, onChange: (String) -> Unit
         value = value,
         onValueChange = { onChange(it.filter { ch -> ch.isDigit() || ch == '.' }) },
         label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -172,7 +193,7 @@ private fun AmountField(label: String, value: String, onChange: (String) -> Unit
 fun PrimaryButton(text: String, onClick: () -> Unit) {
     Text(
         text,
-        Modifier.fillMaxWidth().background(Ink, Pill).clickable(onClick = onClick).padding(vertical = 14.dp),
+        Modifier.fillMaxWidth().pressable(Haptic.Confirm, pressedScale = 0.97f, onClick = onClick).background(Ink, Pill).padding(vertical = 14.dp),
         color = Paper, textAlign = TextAlign.Center, style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
     )
 }
@@ -181,7 +202,7 @@ fun PrimaryButton(text: String, onClick: () -> Unit) {
 fun GhostButton(text: String, onClick: () -> Unit) {
     Text(
         text,
-        Modifier.fillMaxWidth().border(1.dp, Line, Pill).clickable(onClick = onClick).padding(vertical = 14.dp),
+        Modifier.fillMaxWidth().pressable(pressedScale = 0.97f, onClick = onClick).border(1.dp, Line, Pill).padding(vertical = 14.dp),
         color = Ink, textAlign = TextAlign.Center, style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
     )
 }

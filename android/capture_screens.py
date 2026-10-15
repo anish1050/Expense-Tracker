@@ -40,16 +40,26 @@ def find(text: str, timeout: float = 30):
     raise TimeoutError(f"not on screen: {text!r}")
 
 
+def on_screen(text: str) -> bool:
+    try:
+        find(text, timeout=3)
+        return True
+    except TimeoutError:
+        return False
+
+
 def tap(text: str, then: str | None = None):
     """Tap a label; if `then` is given, retry until that label appears (the
     first frames after launch can swallow taps on a slow emulator)."""
     for _ in range(4):
+        if then is not None and on_screen(then):
+            return
         x, y = find(text)
         adb("shell", "input", "tap", str(x), str(y))
         if then is None:
             return
         try:
-            find(then, timeout=8)
+            find(then, timeout=15)
             return
         except TimeoutError:
             continue
@@ -68,24 +78,25 @@ def keys(amount: str):
 
 
 def add(amount: str, emoji: str, day: date, income: bool = False):
-    tap("+", then="✓")
+    tap("+", then="Save")
     if income:
         tap("income")
     tap(str(day.day))
     tap(emoji)
     keys(amount)
-    tap("✓")
+    tap("Save")
     find("this month")
 
 
 def main():
     adb("shell", "pm", "clear", PKG)
+    adb("shell", "pm", "grant", PKG, "android.permission.POST_NOTIFICATIONS")
     adb("shell", "am", "start", "-n", f"{PKG}/.MainActivity")
     find("Skip, use offline", timeout=60)
     shot("01-onboarding")
 
     tap("Skip, use offline", then="Set your budget")
-    for label, value in (("Weekly", "2500"), ("Monthly", "10000"), ("Yearly", "120000")):
+    for label, value in (("Daily", "1000"), ("Weekly", "2500"), ("Monthly", "10000"), ("Yearly", "120000")):
         tap(label)
         adb("shell", "input", "text", value)
     shot("02-budgets")
@@ -109,7 +120,7 @@ def main():
     find("this month", timeout=60)
     shot("04-home")
 
-    tap("+", then="✓")
+    tap("+", then="Save")
     tap("🍔")
     keys("249")
     shot("05-add")
@@ -126,6 +137,12 @@ def main():
     adb("shell", "input", "tap", str(width * 84 // 100), str(nav_y))
     find("settings")
     shot("08-settings")
+
+    # Budget alert fired by the sample data (today's spend is over the daily budget).
+    adb("shell", "cmd", "statusbar", "expand-notifications")
+    time.sleep(2)
+    shot("09-budget-alert")
+    adb("shell", "cmd", "statusbar", "collapse")
 
 
 if __name__ == "__main__":

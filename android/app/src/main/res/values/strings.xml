@@ -11,6 +11,7 @@
     <string name="done">Done</string>
 
     <string name="budget_title">Set your budget</string>
+    <string name="budget_day">Daily</string>
     <string name="budget_week">Weekly</string>
     <string name="budget_month">Monthly</string>
     <string name="budget_year">Yearly</string>
@@ -21,6 +22,8 @@
     <string name="perm_sms">Bank SMS</string>
     <string name="perm_sms_why">Reads bank transaction alerts to log debits and credits. Messages stay on this phone.</string>
     <string name="perm_gallery">Gallery screenshots</string>
+    <string name="perm_alerts">Budget alerts</string>
+    <string name="perm_alerts_why">A notification when spending goes over your daily, weekly, monthly or yearly budget.</string>
     <string name="perm_gallery_why">Pick a payment screenshot and the amount is read on-device.</string>
 
     <string name="expenses">expenses</string>

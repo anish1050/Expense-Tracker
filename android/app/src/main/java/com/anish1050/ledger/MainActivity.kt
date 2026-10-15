@@ -5,6 +5,7 @@ import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -35,7 +36,8 @@ class MainActivity : FragmentActivity() {
             LedgerTheme {
                 LockGate(enabled = prefs.getBoolean("app_lock", false)) {
                     val nav = rememberNavController()
-                    Scaffold(bottomBar = { BottomBar(nav) }) { padding ->
+                    // No automatic insets: screens draw edge to edge and pad themselves.
+                    Scaffold(bottomBar = { BottomBar(nav) }, contentWindowInsets = WindowInsets(0, 0, 0, 0)) { padding ->
                         Box(Modifier.fillMaxSize().padding(padding)) {
                             LedgerNavHost(nav, startDestination = if (onboarded) Routes.HOME else Routes.ONBOARDING)
                         }

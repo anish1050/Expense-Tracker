@@ -8,6 +8,7 @@ import com.anish1050.ledger.data.db.Source
 import com.anish1050.ledger.data.db.TransactionDao
 import com.anish1050.ledger.data.db.TransactionEntity
 import com.anish1050.ledger.data.db.TxState
+import com.anish1050.ledger.insight.BudgetAlerts
 import com.anish1050.ledger.widget.WidgetRefresh
 import java.security.MessageDigest
 import java.util.UUID
@@ -20,6 +21,7 @@ sealed interface IngestResult {
 class TransactionRepository(
     private val context: Context,
     private val dao: TransactionDao,
+    private val budgetAlerts: BudgetAlerts,
 ) {
     suspend fun ingest(parsed: ParsedTransaction, accountId: String = Seed.CASH_ACCOUNT_ID, currency: String = "INR"): IngestResult {
         val now = System.currentTimeMillis()
@@ -42,7 +44,7 @@ class TransactionRepository(
         )
         val rowId = dao.insertIgnore(entity)
         if (rowId == -1L) return IngestResult.Duplicate
-        WidgetRefresh.requestUpdate(context)
+        afterWrite(entity)
         return IngestResult.Inserted(entity.id, entity.state)
     }
 
@@ -68,11 +70,21 @@ class TransactionRepository(
             updatedAt = now,
         )
         dao.insertIgnore(entity)
-        WidgetRefresh.requestUpdate(context)
+        afterWrite(entity)
         return entity.id
     }
 
-    suspend fun confirm(id: String, categoryId: String? = null) = edit(id) { it.copy(state = TxState.confirmed, categoryId = categoryId ?: it.categoryId) }
+    suspend fun confirm(id: String, categoryId: String? = null) {
+        edit(id) { it.copy(state = TxState.confirmed, categoryId = categoryId ?: it.categoryId) }
+        dao.byId(id)?.let { afterWrite(it) }
+    }
+
+    // Widgets always refresh; budgets are only re-checked when confirmed spend
+    // was added, since only that can push a total over a limit.
+    private suspend fun afterWrite(t: TransactionEntity) {
+        WidgetRefresh.requestUpdate(context)
+        if (t.direction == Direction.debit && t.state == TxState.confirmed) runCatching { budgetAlerts.check(t.currency) }
+    }
 
     suspend fun discard(id: String) = edit(id) { it.copy(deleted = true) }
 

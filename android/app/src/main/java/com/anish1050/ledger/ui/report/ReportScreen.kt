@@ -1,9 +1,16 @@
 package com.anish1050.ledger.ui.report
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalView
+import com.anish1050.ledger.ui.AnimatedMoney
+import com.anish1050.ledger.ui.motion.Haptic
+import com.anish1050.ledger.ui.motion.Motion
+import com.anish1050.ledger.ui.motion.pressable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -75,8 +82,13 @@ fun ReportScreen() {
             }
         }
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                state.budgets.forEach { b -> BudgetPill(b, state.currency, Modifier.weight(1f)) { editing = b.period } }
+            // Four budgets as a 2x2 grid so amounts like "₹10,388 / ₹10,000" fit.
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                state.budgets.chunked(2).forEach { pair ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        pair.forEach { b -> BudgetPill(b, state.currency, Modifier.weight(1f)) { editing = b.period } }
+                    }
+                }
             }
         }
         item {
@@ -91,7 +103,7 @@ fun ReportScreen() {
                             Text(state.totals[selected].name, style = MaterialTheme.typography.bodySmall)
                         } else {
                             Text("total", style = MaterialTheme.typography.labelSmall)
-                            Text(Money.format(state.totalMinor, state.currency), style = MaterialTheme.typography.titleMedium)
+                            AnimatedMoney(state.totalMinor, state.currency, style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 }
@@ -108,7 +120,7 @@ fun ReportScreen() {
             val t = state.totals[i]
             val share = if (state.totalMinor > 0) t.totalMinor * 100 / state.totalMinor else 0
             val delta = state.deltaPercent[t.categoryId]
-            Row(Modifier.fillMaxWidth().clickable { selected = if (selected == i) -1 else i }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.animateItem().fillMaxWidth().pressable(Haptic.Tick, pressedScale = 0.98f) { selected = if (selected == i) -1 else i }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(10.dp).background(GREYS[minOf(i, GREYS.lastIndex)], RoundedCornerShape(3.dp)))
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
@@ -141,14 +153,15 @@ private fun BudgetPill(b: BudgetUi, currency: String, modifier: Modifier, onClic
     val limit = b.limitMinor?.takeIf { it > 0 }
     val progress = limit?.let { (b.spentMinor.toFloat() / it).coerceIn(0f, 1f) } ?: 0f
     val over = limit != null && b.spentMinor > limit
-    Column(modifier.border(1.dp, Line, RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(8.dp)) {
+    Column(modifier.pressable(pressedScale = 0.96f, onClick = onClick).border(1.dp, Line, RoundedCornerShape(12.dp)).padding(8.dp)) {
         Text(b.period.name, style = MaterialTheme.typography.labelSmall)
         Text(
             if (b.limitMinor == null) "set" else "${Money.format(b.spentMinor, currency)} / ${Money.format(b.limitMinor, currency)}",
             fontSize = 11.sp, color = Ink, style = MaterialTheme.typography.titleMedium,
         )
         Box(Modifier.fillMaxWidth().height(2.dp).background(Line)) {
-            Box(Modifier.fillMaxWidth(progress).height(2.dp).background(if (over) Over else Ink))
+            val shown by animateFloatAsState(progress, Motion.chart, label = "budget")
+            Box(Modifier.fillMaxWidth(shown).height(2.dp).background(if (over) Over else Ink))
         }
     }
 }
@@ -170,6 +183,11 @@ private fun BudgetEditSheet(period: BudgetPeriod, current: Long?, onDismiss: () 
 @Composable
 fun DonutChart(values: List<Float>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
     val total = values.sum().takeIf { it > 0f } ?: return
+    val view = LocalView.current
+    // Segments sweep in clockwise whenever the data changes (month or tab).
+    val sweep = remember { Animatable(0f) }
+    LaunchedEffect(values) { sweep.snapTo(0f); sweep.animateTo(1f, Motion.chart) }
+    val grow by animateFloatAsState(if (selected >= 0) 1f else 0f, Motion.press, label = "selectedGrow")
     Canvas(
         modifier.pointerInput(values) {
             detectTapGestures { tap ->
@@ -179,7 +197,7 @@ fun DonutChart(values: List<Float>, selected: Int, modifier: Modifier = Modifier
                 var start = 0f
                 values.forEachIndexed { i, v ->
                     val sweep = v / total * 360f
-                    if (angle in start..(start + sweep)) { onSelect(i); return@detectTapGestures }
+                    if (angle in start..(start + sweep)) { Haptic.Tick.play(view); onSelect(i); return@detectTapGestures }
                     start += sweep
                 }
             }
@@ -191,17 +209,17 @@ fun DonutChart(values: List<Float>, selected: Int, modifier: Modifier = Modifier
         val rect = Size(size.width - stroke, size.height - stroke)
         val topLeft = Offset(stroke / 2, stroke / 2)
         values.forEachIndexed { i, v ->
-            val sweep = v / total * 360f
+            val segment = v / total * 360f * sweep.value
             drawArc(
                 color = if (selected == i) Ink else GREYS[minOf(i, GREYS.lastIndex)],
                 startAngle = start + gap / 2,
-                sweepAngle = (sweep - gap).coerceAtLeast(0.5f),
+                sweepAngle = (segment - gap).coerceAtLeast(0.5f),
                 useCenter = false,
                 topLeft = topLeft,
                 size = rect,
-                style = Stroke(width = if (selected == i) stroke + 8f else stroke),
+                style = Stroke(width = if (selected == i) stroke + 10f * grow else stroke),
             )
-            start += sweep
+            start += segment
         }
     }
 }

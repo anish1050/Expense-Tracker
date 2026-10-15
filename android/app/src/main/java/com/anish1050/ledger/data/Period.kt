@@ -9,6 +9,9 @@ import java.time.temporal.TemporalAdjusters
 data class Range(val from: Long, val to: Long)
 
 object Period {
+    fun day(date: LocalDate = LocalDate.now(), zone: ZoneId = ZoneId.systemDefault()): Range =
+        Range(date.atStartOfDay(zone).toInstant().toEpochMilli(), date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1)
+
     fun month(date: LocalDate = LocalDate.now(), zone: ZoneId = ZoneId.systemDefault()): Range {
         val start = date.withDayOfMonth(1)
         return Range(start.atStartOfDay(zone).toInstant().toEpochMilli(), start.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1)

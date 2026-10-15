@@ -9,6 +9,7 @@ import com.anish1050.ledger.data.db.LedgerDatabase
 import com.anish1050.ledger.data.repo.BudgetRepository
 import com.anish1050.ledger.data.repo.CategoryRepository
 import com.anish1050.ledger.data.repo.TransactionRepository
+import com.anish1050.ledger.insight.BudgetAlerts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,7 +25,8 @@ class AppContainer(private val context: Context) {
     val api: LedgerApi by lazy { LedgerApi(BuildConfig.API_BASE_URL, authStore) }
     val ruleStore: RuleStore by lazy { RuleStore(context, api) }
 
-    val transactions: TransactionRepository by lazy { TransactionRepository(context, db.transactionDao()) }
+    val budgetAlerts: BudgetAlerts by lazy { BudgetAlerts(context, db) }
+    val transactions: TransactionRepository by lazy { TransactionRepository(context, db.transactionDao(), budgetAlerts) }
     val categories: CategoryRepository by lazy { CategoryRepository(db.categoryDao()) }
     val budgets: BudgetRepository by lazy { BudgetRepository(db.budgetDao()) }
 
