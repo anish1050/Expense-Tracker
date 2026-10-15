@@ -12,3 +12,4 @@ android/.kotlin/
 .DS_Store
 .claude/
 dist/
+*.stackdump
