@@ -23,19 +23,15 @@ async function getDatabase(): Promise<Db> {
   return client.db(dbName)
 }
 
+// `status` means "did the operation find or change something". Driver and
+// network errors are thrown, never folded into an empty result, so a route
+// cannot mistake an outage for "no records" (handleError turns them into 500).
 export interface MongoOperationResult<T> {
   status: boolean
   mode: string
   data: T
   id: string
   message: string
-  error_code?: number | string
-}
-
-function failure<T>(op: string, empty: T, e: unknown): MongoOperationResult<T> {
-  const err = e as { message?: string; code?: number | string }
-  console.error(`[mongoclient:${op}] ${err.message ?? String(e)}`)
-  return { status: false, mode: 'error', data: empty, id: '', message: err.message ?? 'error', error_code: err.code }
 }
 
 export const MongoClientFindOne = async <T extends Document>(
@@ -43,13 +39,9 @@ export const MongoClientFindOne = async <T extends Document>(
   query: Filter<T>,
   options: FindOptions = {},
 ): Promise<MongoOperationResult<T | null>> => {
-  try {
-    const db = await getDatabase()
-    const data = await db.collection<T>(collection).findOne(query, options)
-    return { status: !!data, mode: 'find', data: (data as T | null) ?? null, id: data?._id?.toString() ?? '', message: data ? 'Record found.' : 'No record found.' }
-  } catch (e) {
-    return failure('findOne', null, e)
-  }
+  const db = await getDatabase()
+  const data = await db.collection<T>(collection).findOne(query, options)
+  return { status: !!data, mode: 'find', data: (data as T | null) ?? null, id: data?._id?.toString() ?? '', message: data ? 'Record found.' : 'No record found.' }
 }
 
 export const MongoClientFind = async <T extends Document>(
@@ -57,26 +49,18 @@ export const MongoClientFind = async <T extends Document>(
   query: Filter<T>,
   options: FindOptions = {},
 ): Promise<MongoOperationResult<T[]>> => {
-  try {
-    const db = await getDatabase()
-    const data = (await db.collection<T>(collection).find(query, options).toArray()) as unknown as T[]
-    return { status: data.length > 0, mode: 'find', data, id: '', message: data.length > 0 ? 'Records found.' : 'No records found.' }
-  } catch (e) {
-    return failure('find', [], e)
-  }
+  const db = await getDatabase()
+  const data = (await db.collection<T>(collection).find(query, options).toArray()) as unknown as T[]
+  return { status: data.length > 0, mode: 'find', data, id: '', message: data.length > 0 ? 'Records found.' : 'No records found.' }
 }
 
 export const MongoClientInsertOne = async <T extends Document>(
   collection: string,
   document: OptionalId<T>,
-): Promise<MongoOperationResult<InsertOneResult<T> | null>> => {
-  try {
-    const db = await getDatabase()
-    const result = await db.collection<T>(collection).insertOne(document as OptionalUnlessRequiredId<T>)
-    return { status: result.acknowledged, mode: 'insert', data: result, id: result.insertedId?.toString() ?? '', message: 'Insert successful.' }
-  } catch (e) {
-    return failure('insertOne', null, e)
-  }
+): Promise<MongoOperationResult<InsertOneResult<T>>> => {
+  const db = await getDatabase()
+  const result = await db.collection<T>(collection).insertOne(document as OptionalUnlessRequiredId<T>)
+  return { status: result.acknowledged, mode: 'insert', data: result, id: result.insertedId?.toString() ?? '', message: 'Insert successful.' }
 }
 
 export const MongoClientUpdateOne = async <T extends Document>(
@@ -84,15 +68,11 @@ export const MongoClientUpdateOne = async <T extends Document>(
   query: Filter<T>,
   update: UpdateFilter<T>,
   options: UpdateOptions = {},
-): Promise<MongoOperationResult<UpdateResult | null>> => {
+): Promise<MongoOperationResult<UpdateResult>> => {
   if (Object.keys(query).length === 0) throw new Error('Query cannot be empty')
-  try {
-    const db = await getDatabase()
-    const result = await db.collection<T>(collection).updateOne(query, update, options)
-    return { status: result.acknowledged, mode: 'update', data: result, id: result.upsertedId?.toString() ?? '', message: result.modifiedCount > 0 ? 'Update successful.' : 'No document updated.' }
-  } catch (e) {
-    return failure('updateOne', null, e)
-  }
+  const db = await getDatabase()
+  const result = await db.collection<T>(collection).updateOne(query, update, options)
+  return { status: result.acknowledged, mode: 'update', data: result, id: result.upsertedId?.toString() ?? '', message: result.modifiedCount > 0 ? 'Update successful.' : 'No document updated.' }
 }
 
 export const MongoClientFindOneAndUpdate = async <T extends Document>(
@@ -102,44 +82,46 @@ export const MongoClientFindOneAndUpdate = async <T extends Document>(
   options: FindOneAndUpdateOptions = {},
 ): Promise<MongoOperationResult<T | null>> => {
   if (Object.keys(query).length === 0) throw new Error('Query cannot be empty')
-  try {
-    const db = await getDatabase()
-    const data = await db.collection<T>(collection).findOneAndUpdate(query, update, options)
-    return { status: !!data, mode: 'findOneAndUpdate', data: (data as T | null) ?? null, id: data?._id?.toString() ?? '', message: data ? 'Document updated.' : 'No document matched.' }
-  } catch (e) {
-    return failure('findOneAndUpdate', null, e)
-  }
+  const db = await getDatabase()
+  const data = await db.collection<T>(collection).findOneAndUpdate(query, update, options)
+  return { status: !!data, mode: 'findOneAndUpdate', data: (data as T | null) ?? null, id: data?._id?.toString() ?? '', message: data ? 'Document updated.' : 'No document matched.' }
 }
 
 export const MongoClientDeleteMany = async <T extends Document>(
   collection: string,
   query: Filter<T>,
-): Promise<MongoOperationResult<DeleteResult | null>> => {
+): Promise<MongoOperationResult<DeleteResult>> => {
   if (Object.keys(query).length === 0) throw new Error('Query cannot be empty')
-  try {
-    const db = await getDatabase()
-    const result = await db.collection<T>(collection).deleteMany(query)
-    return { status: result.acknowledged, mode: 'deleteMany', data: result, id: '', message: `${result.deletedCount} deleted.` }
-  } catch (e) {
-    return failure('deleteMany', null, e)
-  }
+  const db = await getDatabase()
+  const result = await db.collection<T>(collection).deleteMany(query)
+  if (!result.acknowledged) throw new Error(`deleteMany on ${collection} was not acknowledged`)
+  return { status: result.deletedCount > 0, mode: 'deleteMany', data: result, id: '', message: `${result.deletedCount} deleted.` }
 }
 
+export interface BulkWriteOutcome {
+  result: BulkWriteResult | null
+  /** Indexes into the operations array that failed with a duplicate key (11000). */
+  duplicateKeyIndexes: number[]
+}
+
+// Unordered bulk write where duplicate keys are an expected outcome (version-
+// guarded upserts). Any other error is thrown.
 export const MongoClientBulkWrite = async <T extends Document>(
   collection: string,
   operations: AnyBulkWriteOperation<T>[],
-): Promise<MongoOperationResult<BulkWriteResult | null>> => {
+): Promise<BulkWriteOutcome> => {
   if (operations.length === 0) throw new Error('Operations cannot be empty')
+  const db = await getDatabase()
   try {
-    const db = await getDatabase()
     const result = await db.collection<T>(collection).bulkWrite(operations, { ordered: false })
-    return { status: result.ok === 1, mode: 'bulkWrite', data: result, id: '', message: 'Bulk write done.' }
+    return { result, duplicateKeyIndexes: [] }
   } catch (e) {
-    // Duplicate keys are an expected outcome for version-guarded upserts, so
-    // return them without the error log; callers inspect error_code.
-    const err = e as { code?: number; message?: string; result?: BulkWriteResult }
-    if (err.code === 11000) return { status: false, mode: 'bulkWrite', data: err.result ?? null, id: '', message: err.message ?? 'duplicate', error_code: 11000 }
-    return failure('bulkWrite', null, e)
+    const err = e as { code?: number; result?: BulkWriteResult; writeErrors?: Array<{ code: number; index: number }> }
+    const writeErrors = err.writeErrors ?? []
+    if (writeErrors.length > 0 && writeErrors.every((w) => w.code === 11000)) {
+      return { result: err.result ?? null, duplicateKeyIndexes: writeErrors.map((w) => w.index) }
+    }
+    throw e
   }
 }
 

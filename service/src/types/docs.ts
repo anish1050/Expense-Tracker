@@ -7,11 +7,15 @@ export interface CoreUserDoc {
   name: string
   created_at: Date
   last_login_at: Date
+  /** Last allocated sync sequence number; see routes/sync allocateSeq. */
+  sync_seq: number
 }
 
 export interface DeviceDoc {
+  /** `${user_id}:${device_id}` so one user can never overwrite another's record. */
   _id: string
   user_id: string
+  device_id: string
   platform: 'android' | 'ios'
   last_seen_at: Date
 }
@@ -24,6 +28,7 @@ export interface SyncRowDoc {
   table: SyncTable
   row_id: string
   version: number
+  seq: number
   updated_at: Date
   ciphertext: string
   nonce: string

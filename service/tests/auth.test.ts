@@ -8,7 +8,7 @@ vi.mock('#helpers/jwt.js', async (importOriginal) => {
   return {
     ...real,
     verifyGoogleIdToken: vi.fn(async (token: string) => {
-      if (token !== 'valid-google-id-token-xxxxxxxx') throw new Error('bad token')
+      if (token !== 'valid-google-id-token-xxxxxxxx') throw new real.GoogleTokenError('bad token')
       return { sub: 'google-sub-1', email: 'a@example.com', name: 'A' }
     }),
   }
@@ -49,5 +49,12 @@ describe('POST /api/auth/google', () => {
   it('401s protected routes without a token', async () => {
     expect((await api('/api/me')).status).toBe(401)
     expect((await api('/api/me', {}, 'garbage')).status).toBe(401)
+  })
+
+  it('401s a valid token whose account was deleted', async () => {
+    const first = await api('/api/auth/google', body('valid-google-id-token-xxxxxxxx'))
+    const { data } = await json(first)
+    expect((await api('/api/me', { method: 'DELETE' }, data.access_token)).status).toBe(204)
+    expect((await api('/api/me', {}, data.access_token)).status).toBe(401)
   })
 })

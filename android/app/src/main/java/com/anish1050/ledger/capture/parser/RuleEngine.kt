@@ -39,7 +39,7 @@ class RuleEngine(ruleSet: RuleSet) {
                 merchant = m.group("merchant")?.trim().orEmpty(),
                 last4 = m.group("last4"),
                 ref = m.group("ref"),
-                occurredAt = m.group("date")?.let(::parseDate) ?: raw.receivedAt,
+                occurredAt = occurredAt(m.group("date"), raw.receivedAt),
                 source = raw.source,
                 confidence = rule.confidence,
             )
@@ -50,6 +50,17 @@ class RuleEngine(ruleSet: RuleSet) {
     // Unlike JS, Kotlin throws when a pattern has no group of that name, and
     // most rules only define a subset of the five groups.
     private fun MatchResult.group(name: String): String? = runCatching { groups[name]?.value }.getOrNull()
+
+    // A date-only group would put the transaction at midnight and widen the
+    // 2-minute dedupe bucket to a whole day, so keep the delivery time whenever
+    // the SMS date is today; only backdated alerts fall back to the date.
+    private fun occurredAt(dateText: String?, receivedAt: Long): Long {
+        val dateMidnight = dateText?.let(::parseDate) ?: return receivedAt
+        val zone = ZoneId.systemDefault()
+        val receivedDay = java.time.Instant.ofEpochMilli(receivedAt).atZone(zone).toLocalDate()
+        val smsDay = java.time.Instant.ofEpochMilli(dateMidnight).atZone(zone).toLocalDate()
+        return if (smsDay == receivedDay) receivedAt else dateMidnight
+    }
 
     private fun parseDate(text: String): Long? = DATE_FORMATS.firstNotNullOfOrNull { format ->
         runCatching { LocalDate.parse(text, format) }.getOrNull()

@@ -22,7 +22,12 @@ fun budgetTip(
 
     val prevById = prevTotals.associate { it.categoryId to it.totalMinor }
     val discretionary = totals.filter { it.discretionary && it.totalMinor > 0 }
-    if (discretionary.isEmpty()) return Tip("Over by ${Money.format(overspend, currency)}", "No discretionary spending to trim $periodLabel.")
+    if (discretionary.isEmpty()) {
+        val biggest = totals.maxByOrNull { it.totalMinor }
+        val detail = if (biggest == null) "Add categories to your expenses to get a trim suggestion."
+        else "Biggest spend is ${biggest.name} at ${Money.format(biggest.totalMinor, currency)}. Categorise expenses to get a trim suggestion."
+        return Tip("Over by ${Money.format(overspend, currency)}", detail)
+    }
 
     val grown = discretionary
         .map { it to (it.totalMinor - (prevById[it.categoryId] ?: 0L)) }

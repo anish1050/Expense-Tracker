@@ -39,6 +39,14 @@ class BudgetTipTest {
     }
 
     @Test
+    fun uncategorisedSpendStillNamesTheBiggestBucket() {
+        val totals = listOf(cat("other", "other", 4_000_100, discretionary = false))
+        val tip = budgetTip(spentMinor = 4_000_100, limitMinor = 50_000, totals = totals, prevTotals = emptyList(), currency = "INR")
+        assertThat(tip.headline).isEqualTo("Over by ₹39,501")
+        assertThat(tip.detail).startsWith("Biggest spend is other at ₹40,001")
+    }
+
+    @Test
     fun noDiscretionaryGrowthFallsBackToLargest() {
         val totals = listOf(cat("fd", "food delivery", 100_000), cat("shop", "shopping", 300_000))
         val prev = listOf(cat("fd", "food delivery", 100_000), cat("shop", "shopping", 300_000))

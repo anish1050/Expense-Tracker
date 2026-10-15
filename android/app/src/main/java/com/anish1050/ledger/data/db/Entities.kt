@@ -7,6 +7,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable enum class Direction { debit, credit }
 @Serializable enum class Source { manual, notification, sms, gallery }
@@ -29,6 +30,8 @@ data class AccountEntity(
     @ColumnInfo(name = "updated_at") @SerialName("updated_at") val updatedAt: Long,
     val version: Int = 1,
     val deleted: Boolean = false,
+    // Local only: the version the server has accepted. version > pushed_version means dirty.
+    @ColumnInfo(name = "pushed_version") @Transient val pushedVersion: Int = 0,
 )
 
 @Serializable
@@ -43,6 +46,8 @@ data class CategoryEntity(
     @ColumnInfo(name = "updated_at") @SerialName("updated_at") val updatedAt: Long,
     val version: Int = 1,
     val deleted: Boolean = false,
+    // Local only: the version the server has accepted. version > pushed_version means dirty.
+    @ColumnInfo(name = "pushed_version") @Transient val pushedVersion: Int = 0,
 )
 
 @Serializable
@@ -55,6 +60,8 @@ data class BudgetEntity(
     @ColumnInfo(name = "updated_at") @SerialName("updated_at") val updatedAt: Long,
     val version: Int = 1,
     val deleted: Boolean = false,
+    // Local only: the version the server has accepted. version > pushed_version means dirty.
+    @ColumnInfo(name = "pushed_version") @Transient val pushedVersion: Int = 0,
 )
 
 @Serializable
@@ -90,6 +97,8 @@ data class TransactionEntity(
     @ColumnInfo(name = "updated_at") @SerialName("updated_at") val updatedAt: Long,
     val version: Int = 1,
     val deleted: Boolean = false,
+    // Local only: the version the server has accepted. version > pushed_version means dirty.
+    @ColumnInfo(name = "pushed_version") @Transient val pushedVersion: Int = 0,
 )
 
 @Entity(tableName = "sync_cursor")

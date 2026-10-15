@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import com.anish1050.ledger.data.sync.SyncWorker
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
@@ -28,6 +30,8 @@ class MainActivity : FragmentActivity() {
         val onboarded = prefs.getBoolean("onboarded", false)
 
         setContent {
+            // Off the launch path: WorkManager initialises on its own thread after first frame.
+            LaunchedEffect(Unit) { SyncWorker.schedule(applicationContext) }
             LedgerTheme {
                 LockGate(enabled = prefs.getBoolean("app_lock", false)) {
                     val nav = rememberNavController()

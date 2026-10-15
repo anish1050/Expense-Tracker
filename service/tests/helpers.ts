@@ -19,7 +19,12 @@ export function json(res: Response): Promise<JsonBody> {
 }
 
 export async function newUserToken() {
-  const userId = new ObjectId().toString()
+  const id = new ObjectId()
+  const client = await getClientPromise()
+  await client.db(process.env.MONGODB_DBNAME).collection('core_users').insertOne({
+    _id: id, google_sub: `sub-${id}`, email: `${id}@example.com`, name: 'T', created_at: new Date(), last_login_at: new Date(), sync_seq: 0,
+  })
+  const userId = id.toString()
   return { userId, token: await signAppJwt(userId) }
 }
 

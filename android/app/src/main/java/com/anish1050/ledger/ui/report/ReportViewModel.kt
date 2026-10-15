@@ -12,6 +12,7 @@ import com.anish1050.ledger.data.db.BudgetEntity
 import com.anish1050.ledger.data.db.BudgetPeriod
 import com.anish1050.ledger.data.db.CategoryTotal
 import com.anish1050.ledger.data.db.Direction
+import com.anish1050.ledger.data.db.Seed
 import com.anish1050.ledger.insight.Tip
 import com.anish1050.ledger.insight.budgetTip
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,8 +51,8 @@ class ReportViewModel(private val container: AppContainer) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReportState())
 
     private suspend fun build(dir: Direction, budgets: List<BudgetEntity>): ReportState {
-        val totals = dao.categoryTotals(dir, month.from, month.to)
-        val prev = dao.categoryTotals(dir, prevMonth.from, prevMonth.to)
+        val totals = dao.categoryTotals(dir, month.from, month.to, Seed.UNCATEGORISED_ID)
+        val prev = dao.categoryTotals(dir, prevMonth.from, prevMonth.to, Seed.UNCATEGORISED_ID)
         val prevById = prev.associate { it.categoryId to it.totalMinor }
         val limits = budgets.associate { it.period to it.amountMinor }
         val week = Period.week()

@@ -6,6 +6,7 @@ import com.anish1050.ledger.data.api.LedgerApi
 import com.anish1050.ledger.data.api.SyncRow
 import com.anish1050.ledger.data.db.AccountEntity
 import com.anish1050.ledger.data.db.BudgetEntity
+import com.anish1050.ledger.data.db.BudgetPeriod
 import com.anish1050.ledger.data.db.CategoryEntity
 import com.anish1050.ledger.data.db.LedgerDatabase
 import com.anish1050.ledger.data.db.SyncCursorEntity
@@ -13,45 +14,59 @@ import com.anish1050.ledger.data.db.TransactionEntity
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 
-// Last-writer-wins row sync over opaque encrypted blobs. Four tables, one
-// shape: serialize entity -> encrypt -> push; pull -> decrypt -> upsert if the
-// incoming version is newer.
+class BackupKeyMismatch : Exception("backup passphrase does not decrypt the cloud rows")
+
+// Row sync over opaque encrypted blobs.
+//  push: rows with version > pushed_version are dirty; after the server accepts
+//        them pushed_version catches up. No clocks involved.
+//  pull: paged by the server-assigned seq; a row is applied when its version is
+//        >= ours, because the server already arbitrated equal versions.
 class SyncEngine(
     private val db: LedgerDatabase,
     private val api: LedgerApi,
     private val auth: AuthStore,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
-    private val crypto get() = RowCrypto(auth.backupKey ?: error("backup key missing"))
+    private val crypto = RowCrypto(auth.backupKey ?: error("backup key missing"))
 
-    // Pushes in pages ordered by updated_at so the cursor only ever advances past
-    // rows that were actually sent; a cut-off page is picked up next time.
     suspend fun push() {
         while (true) {
-            val since = cursor(PUSHED_AT)
+            val accounts = db.accountDao().dirty(LIMIT)
+            val categories = db.categoryDao().dirty(LIMIT)
+            val budgets = db.budgetDao().dirty(LIMIT)
+            val transactions = db.transactionDao().dirty(LIMIT)
+
             val rows = buildList {
-                db.accountDao().changedSince(since, LIMIT).forEach { add(seal("accounts", it.id, it.version, it.updatedAt, it.deleted, AccountEntity.serializer(), it)) }
-                db.categoryDao().changedSince(since, LIMIT).forEach { add(seal("categories", it.id, it.version, it.updatedAt, it.deleted, CategoryEntity.serializer(), it)) }
-                db.budgetDao().changedSince(since, LIMIT).forEach { add(seal("budgets", budgetRowId(it), it.version, it.updatedAt, it.deleted, BudgetEntity.serializer(), it)) }
-                db.transactionDao().changedSince(since, LIMIT).forEach { add(seal("transactions", it.id, it.version, it.updatedAt, it.deleted, TransactionEntity.serializer(), it)) }
-            }.sortedBy { it.updatedAt }.take(LIMIT)
+                accounts.forEach { add(seal("accounts", it.id, it.version, it.updatedAt, it.deleted, AccountEntity.serializer(), it)) }
+                categories.forEach { add(seal("categories", it.id, it.version, it.updatedAt, it.deleted, CategoryEntity.serializer(), it)) }
+                budgets.forEach { add(seal("budgets", budgetRowId(it.period), it.version, it.updatedAt, it.deleted, BudgetEntity.serializer(), it)) }
+                transactions.forEach { add(seal("transactions", it.id, it.version, it.updatedAt, it.deleted, TransactionEntity.serializer(), it)) }
+            }.take(LIMIT)
             if (rows.isEmpty()) return
-            api.push(auth.deviceId, rows)
-            // Rejected rows have a newer server copy; the next pull brings it down.
-            setCursor(PUSHED_AT, rows.last().updatedAt)
+
+            val sent = rows.map { it.rowId }.toSet()
+            val rejected = api.push(auth.deviceId, rows).rejected.map { it.rowId }.toSet()
+            // Rejected rows have a newer server copy; the next pull replaces them
+            // and marks them pushed. Everything else is now on the server.
+            val accepted = sent - rejected
+            db.accountDao().markPushed(accounts.map { it.id }.filter { it in accepted })
+            db.categoryDao().markPushed(categories.map { it.id }.filter { it in accepted })
+            db.budgetDao().markPushed(budgets.map { it.period }.filter { budgetRowId(it) in accepted })
+            db.transactionDao().markPushed(transactions.map { it.id }.filter { it in accepted })
+
             if (rows.size < LIMIT) return
         }
     }
 
     suspend fun pull() {
-        var since = cursor(PULLED_AT)
+        var since = db.syncCursorDao().get(PULLED_SEQ)?.toLongOrNull() ?: 0L
         while (true) {
             val page = api.pull(since)
-            if (page.rows.isEmpty()) break
+            if (page.rows.isEmpty()) return
             applyPulledRows(page.rows)
             since = page.nextSince
-            setCursor(PULLED_AT, since)
-            if (page.rows.size < LIMIT) break
+            db.syncCursorDao().set(SyncCursorEntity(PULLED_SEQ, since.toString()))
+            if (page.rows.size < LIMIT) return
         }
     }
 
@@ -61,19 +76,21 @@ class SyncEngine(
         val budgets = mutableListOf<BudgetEntity>()
         val transactions = mutableListOf<TransactionEntity>()
         for (row in rows) {
-            val plain = runCatching { crypto.decrypt(Base64.decode(row.ciphertext, Base64.NO_WRAP), Base64.decode(row.nonce, Base64.NO_WRAP)) }.getOrNull() ?: continue
+            // A row we cannot decrypt means the key is wrong. Stop without moving
+            // the cursor so the data is still there once the passphrase is fixed.
+            val plain = runCatching { crypto.decrypt(Base64.decode(row.ciphertext, Base64.NO_WRAP), Base64.decode(row.nonce, Base64.NO_WRAP)) }
+                .getOrElse { throw BackupKeyMismatch() }
             when (row.table) {
-                "accounts" -> accounts += json.decodeFromString(AccountEntity.serializer(), plain)
-                "categories" -> categories += json.decodeFromString(CategoryEntity.serializer(), plain)
-                "budgets" -> budgets += json.decodeFromString(BudgetEntity.serializer(), plain)
-                "transactions" -> transactions += json.decodeFromString(TransactionEntity.serializer(), plain)
+                "accounts" -> accounts += json.decodeFromString(AccountEntity.serializer(), plain).copy(pushedVersion = row.version)
+                "categories" -> categories += json.decodeFromString(CategoryEntity.serializer(), plain).copy(pushedVersion = row.version)
+                "budgets" -> budgets += json.decodeFromString(BudgetEntity.serializer(), plain).copy(pushedVersion = row.version)
+                "transactions" -> transactions += json.decodeFromString(TransactionEntity.serializer(), plain).copy(pushedVersion = row.version)
             }
         }
-        // Keep local rows that are at least as new; LWW by version.
-        if (accounts.isNotEmpty()) db.accountDao().upsertAll(accounts.filter { incoming -> (db.accountDao().byId(incoming.id)?.version ?: 0) < incoming.version })
-        if (categories.isNotEmpty()) db.categoryDao().upsertAll(categories.filter { incoming -> (db.categoryDao().byId(incoming.id)?.version ?: 0) < incoming.version })
-        if (budgets.isNotEmpty()) db.budgetDao().upsertAll(budgets.filter { incoming -> (db.budgetDao().byPeriod(incoming.period)?.version ?: 0) < incoming.version })
-        if (transactions.isNotEmpty()) db.transactionDao().upsertAll(transactions.filter { incoming -> (db.transactionDao().byId(incoming.id)?.version ?: 0) < incoming.version })
+        db.accountDao().upsertAll(accounts.filter { incoming -> (db.accountDao().byId(incoming.id)?.version ?: 0) <= incoming.version })
+        db.categoryDao().upsertAll(categories.filter { incoming -> (db.categoryDao().byId(incoming.id)?.version ?: 0) <= incoming.version })
+        db.budgetDao().upsertAll(budgets.filter { incoming -> (db.budgetDao().byPeriod(incoming.period)?.version ?: 0) <= incoming.version })
+        db.transactionDao().upsertAll(transactions.filter { incoming -> (db.transactionDao().byId(incoming.id)?.version ?: 0) <= incoming.version })
     }
 
     private fun <T> seal(table: String, rowId: String, version: Int, updatedAt: Long, deleted: Boolean, serializer: KSerializer<T>, entity: T): SyncRow {
@@ -89,19 +106,25 @@ class SyncEngine(
         )
     }
 
-    private suspend fun cursor(key: String) = db.syncCursorDao().get(key)?.toLongOrNull() ?: 0L
-    private suspend fun setCursor(key: String, value: Long) = db.syncCursorDao().set(SyncCursorEntity(key, value.toString()))
-
-    private companion object {
+    companion object {
         const val LIMIT = 500
-        const val PUSHED_AT = "pushed_at"
-        const val PULLED_AT = "pulled_at"
+        private const val PULLED_SEQ = "pulled_seq"
 
         // Budgets are keyed by period, not UUID; map to a stable UUID per period so the server's row_id validation holds.
-        fun budgetRowId(b: BudgetEntity) = when (b.period) {
-            com.anish1050.ledger.data.db.BudgetPeriod.week -> "00000000-0000-4000-8000-0000000000b1"
-            com.anish1050.ledger.data.db.BudgetPeriod.month -> "00000000-0000-4000-8000-0000000000b2"
-            com.anish1050.ledger.data.db.BudgetPeriod.year -> "00000000-0000-4000-8000-0000000000b3"
+        fun budgetRowId(period: BudgetPeriod) = when (period) {
+            BudgetPeriod.week -> "00000000-0000-4000-8000-0000000000b1"
+            BudgetPeriod.month -> "00000000-0000-4000-8000-0000000000b2"
+            BudgetPeriod.year -> "00000000-0000-4000-8000-0000000000b3"
+        }
+
+        // Sign-out, account switch or a new passphrase: every row must be
+        // re-uploaded under the new identity and the pull starts from scratch.
+        suspend fun resetLocalSyncState(db: LedgerDatabase) {
+            db.syncCursorDao().clear()
+            db.accountDao().resetPushed()
+            db.categoryDao().resetPushed()
+            db.budgetDao().resetPushed()
+            db.transactionDao().resetPushed()
         }
     }
 }

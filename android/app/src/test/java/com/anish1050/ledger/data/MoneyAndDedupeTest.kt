@@ -14,6 +14,10 @@ class MoneyAndDedupeTest {
         assertThat(Money.parseToMinor("0.1")).isEqualTo(10L)
         assertThat(Money.parseToMinor("1.234,56")).isEqualTo(123_456L)
         assertThat(Money.parseToMinor("89,90")).isEqualTo(8_990L)
+        assertThat(Money.parseToMinor("1.234")).isEqualTo(123_400L)
+        assertThat(Money.parseToMinor("1.234.567")).isEqualTo(123_456_700L)
+        assertThat(Money.parseToMinor("1.2345")).isNull()
+        assertThat(Money.parseToMinor("99999999999999999999")).isNull()
         assertThat(Money.parseToMinor("abc")).isNull()
     }
 
@@ -31,9 +35,9 @@ class MoneyAndDedupeTest {
     @Test
     fun sameUpiPaymentFromSmsAndNotificationCollapses() {
         val t = 1_700_000_000_000L
-        val fromSms = TransactionRepository.dedupeKey(Direction.debit, 24_900, "1234", "burgerking@ybl", t)
-        val fromNotification = TransactionRepository.dedupeKey(Direction.debit, 24_900, "1234", "BurgerKing@ybl ", t + 30_000)
-        val differentAmount = TransactionRepository.dedupeKey(Direction.debit, 25_000, "1234", "burgerking@ybl", t)
+        val fromSms = TransactionRepository.dedupeKey(Direction.debit, 24_900, t)
+        val fromNotification = TransactionRepository.dedupeKey(Direction.debit, 24_900, t + 30_000)
+        val differentAmount = TransactionRepository.dedupeKey(Direction.debit, 25_000, t)
         assertThat(fromSms).isEqualTo(fromNotification)
         assertThat(fromSms).isNotEqualTo(differentAmount)
     }

@@ -26,7 +26,7 @@ class TransactionRepository(
         val entity = TransactionEntity(
             id = UUID.randomUUID().toString(),
             accountId = accountId,
-            categoryId = null,
+            categoryId = Seed.UNCATEGORISED_ID,
             amountMinor = parsed.amountMinor,
             currency = currency,
             direction = parsed.direction,
@@ -36,7 +36,7 @@ class TransactionRepository(
             source = parsed.source,
             confidence = parsed.confidence,
             state = if (parsed.confidence >= CONFIRM_THRESHOLD) TxState.confirmed else TxState.review,
-            dedupeKey = dedupeKey(parsed.direction, parsed.amountMinor, parsed.last4, parsed.ref ?: parsed.merchant, parsed.occurredAt),
+            dedupeKey = dedupeKey(parsed.direction, parsed.amountMinor, parsed.occurredAt),
             createdAt = now,
             updatedAt = now,
         )
@@ -52,7 +52,7 @@ class TransactionRepository(
         val entity = TransactionEntity(
             id = id,
             accountId = accountId,
-            categoryId = categoryId,
+            categoryId = categoryId ?: Seed.UNCATEGORISED_ID,
             amountMinor = amountMinor,
             currency = currency,
             direction = direction,
@@ -86,12 +86,14 @@ class TransactionRepository(
         const val CONFIRM_THRESHOLD = 0.8f
 
         // Same payment seen from SMS and from a notification collapses to one
-        // row: direction, amount, account last4, reference or merchant, and a
-        // 2-minute time bucket. ponytail: a payment whose two alerts straddle a
-        // bucket edge shows twice; widen to a +-1 bucket probe if users report it.
-        fun dedupeKey(direction: Direction, amountMinor: Long, last4: String?, refOrMerchant: String, occurredAt: Long): String {
+        // row. The two alerts share only direction, amount and time (the SMS
+        // has a ref and last4, the notification has a merchant), so the key is
+        // direction + amount + 2-minute bucket. ponytail: two distinct payments
+        // of the same amount inside two minutes merge, and alerts straddling a
+        // bucket edge show twice; add a +-1 bucket probe if users report it.
+        fun dedupeKey(direction: Direction, amountMinor: Long, occurredAt: Long): String {
             val bucket = occurredAt / 120_000L
-            val raw = "${direction.name}|$amountMinor|${last4.orEmpty()}|${refOrMerchant.lowercase().trim()}|$bucket"
+            val raw = "${direction.name}|$amountMinor|$bucket"
             return MessageDigest.getInstance("SHA-256").digest(raw.toByteArray()).joinToString("") { "%02x".format(it) }
         }
     }

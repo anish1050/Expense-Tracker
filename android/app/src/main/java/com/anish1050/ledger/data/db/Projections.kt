@@ -18,12 +18,6 @@ data class TransactionRow(
 )
 
 @Immutable
-data class DayNet(
-    @ColumnInfo(name = "day_start") val dayStart: Long,
-    @ColumnInfo(name = "day_net_minor") val dayNetMinor: Long,
-)
-
-@Immutable
 data class CategoryTotal(
     @ColumnInfo(name = "category_id") val categoryId: String,
     val name: String,

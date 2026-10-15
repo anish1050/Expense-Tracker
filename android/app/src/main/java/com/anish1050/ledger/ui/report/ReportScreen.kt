@@ -134,8 +134,9 @@ fun ReportScreen() {
 
 @Composable
 private fun BudgetPill(b: BudgetUi, currency: String, modifier: Modifier, onClick: () -> Unit) {
-    val progress = b.limitMinor?.let { (b.spentMinor.toFloat() / it).coerceIn(0f, 1f) } ?: 0f
-    val over = b.limitMinor != null && b.spentMinor > b.limitMinor
+    val limit = b.limitMinor?.takeIf { it > 0 }
+    val progress = limit?.let { (b.spentMinor.toFloat() / it).coerceIn(0f, 1f) } ?: 0f
+    val over = limit != null && b.spentMinor > limit
     Column(modifier.border(1.dp, Line, RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(8.dp)) {
         Text(b.period.name, style = MaterialTheme.typography.labelSmall)
         Text(
@@ -156,7 +157,7 @@ private fun BudgetEditSheet(period: BudgetPeriod, current: Long?, onDismiss: () 
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("${period.name} budget", style = MaterialTheme.typography.displaySmall)
             OutlinedTextField(text, { text = it.filter { c -> c.isDigit() || c == '.' } }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
-            PrimaryButton("Save") { Money.parseToMinor(text)?.let(onSave) }
+            PrimaryButton("Save") { Money.parseToMinor(text)?.takeIf { it > 0 }?.let(onSave) }
             Spacer(Modifier.height(24.dp))
         }
     }

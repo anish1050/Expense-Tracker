@@ -25,19 +25,6 @@ interface TransactionDao {
     )
     fun rows(from: Long, to: Long): Flow<List<TransactionRow>>
 
-    // One net amount per day; the running sum happens in the ViewModel because
-    // SQLite window functions only exist from API 30.
-    @Query(
-        """
-        SELECT (occurred_at / 86400000) * 86400000 AS day_start,
-               SUM(CASE direction WHEN 'credit' THEN amount_minor ELSE -amount_minor END) AS day_net_minor
-        FROM transactions
-        WHERE deleted = 0 AND state = 'confirmed' AND occurred_at BETWEEN :from AND :to
-        GROUP BY day_start ORDER BY day_start
-        """,
-    )
-    fun dailyNet(from: Long, to: Long): Flow<List<DayNet>>
-
     @Query(
         """
         SELECT COALESCE(SUM(CASE direction WHEN 'credit' THEN amount_minor ELSE -amount_minor END), 0)
@@ -49,13 +36,13 @@ interface TransactionDao {
     @Query(
         """
         SELECT c.id AS category_id, c.name, c.emoji, c.discretionary, SUM(t.amount_minor) AS total_minor
-        FROM transactions t JOIN categories c ON c.id = t.category_id
+        FROM transactions t JOIN categories c ON c.id = COALESCE(t.category_id, :fallbackCategoryId)
         WHERE t.deleted = 0 AND t.state = 'confirmed' AND t.direction = :direction
           AND t.occurred_at BETWEEN :from AND :to
         GROUP BY c.id ORDER BY total_minor DESC
         """,
     )
-    suspend fun categoryTotals(direction: Direction, from: Long, to: Long): List<CategoryTotal>
+    suspend fun categoryTotals(direction: Direction, from: Long, to: Long, fallbackCategoryId: String): List<CategoryTotal>
 
     @Query(
         """
@@ -94,8 +81,14 @@ interface TransactionDao {
     @Upsert
     suspend fun upsertAll(rows: List<TransactionEntity>)
 
-    @Query("SELECT * FROM transactions WHERE updated_at > :since ORDER BY updated_at LIMIT :limit")
-    suspend fun changedSince(since: Long, limit: Int): List<TransactionEntity>
+    @Query("SELECT * FROM transactions WHERE version > pushed_version LIMIT :limit")
+    suspend fun dirty(limit: Int): List<TransactionEntity>
+
+    @Query("UPDATE transactions SET pushed_version = version WHERE id IN (:ids)")
+    suspend fun markPushed(ids: List<String>)
+
+    @Query("UPDATE transactions SET pushed_version = 0")
+    suspend fun resetPushed()
 }
 
 @Dao
@@ -106,38 +99,35 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun byId(id: String): CategoryEntity?
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertAll(rows: List<CategoryEntity>)
-
     @Upsert
     suspend fun upsertAll(rows: List<CategoryEntity>)
 
-    @Query("SELECT * FROM categories WHERE updated_at > :since ORDER BY updated_at LIMIT :limit")
-    suspend fun changedSince(since: Long, limit: Int): List<CategoryEntity>
+    @Query("SELECT * FROM categories WHERE version > pushed_version LIMIT :limit")
+    suspend fun dirty(limit: Int): List<CategoryEntity>
+
+    @Query("UPDATE categories SET pushed_version = version WHERE id IN (:ids)")
+    suspend fun markPushed(ids: List<String>)
+
+    @Query("UPDATE categories SET pushed_version = 0")
+    suspend fun resetPushed()
 }
 
 @Dao
 interface AccountDao {
-    @Query("SELECT * FROM accounts WHERE deleted = 0 ORDER BY created_at")
-    fun all(): Flow<List<AccountEntity>>
-
     @Query("SELECT * FROM accounts WHERE id = :id")
     suspend fun byId(id: String): AccountEntity?
-
-    @Query("SELECT * FROM accounts WHERE last4 = :last4 AND deleted = 0 LIMIT 1")
-    suspend fun byLast4(last4: String): AccountEntity?
-
-    @Query("SELECT * FROM accounts WHERE kind = :kind AND deleted = 0 ORDER BY created_at LIMIT 1")
-    suspend fun firstOfKind(kind: AccountKind): AccountEntity?
-
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(row: AccountEntity)
 
     @Upsert
     suspend fun upsertAll(rows: List<AccountEntity>)
 
-    @Query("SELECT * FROM accounts WHERE updated_at > :since ORDER BY updated_at LIMIT :limit")
-    suspend fun changedSince(since: Long, limit: Int): List<AccountEntity>
+    @Query("SELECT * FROM accounts WHERE version > pushed_version LIMIT :limit")
+    suspend fun dirty(limit: Int): List<AccountEntity>
+
+    @Query("UPDATE accounts SET pushed_version = version WHERE id IN (:ids)")
+    suspend fun markPushed(ids: List<String>)
+
+    @Query("UPDATE accounts SET pushed_version = 0")
+    suspend fun resetPushed()
 }
 
 @Dao
@@ -154,8 +144,14 @@ interface BudgetDao {
     @Upsert
     suspend fun upsertAll(rows: List<BudgetEntity>)
 
-    @Query("SELECT * FROM budgets WHERE updated_at > :since ORDER BY updated_at LIMIT :limit")
-    suspend fun changedSince(since: Long, limit: Int): List<BudgetEntity>
+    @Query("SELECT * FROM budgets WHERE version > pushed_version LIMIT :limit")
+    suspend fun dirty(limit: Int): List<BudgetEntity>
+
+    @Query("UPDATE budgets SET pushed_version = version WHERE period IN (:periods)")
+    suspend fun markPushed(periods: List<BudgetPeriod>)
+
+    @Query("UPDATE budgets SET pushed_version = 0")
+    suspend fun resetPushed()
 }
 
 @Dao
@@ -165,4 +161,7 @@ interface SyncCursorDao {
 
     @Upsert
     suspend fun set(row: SyncCursorEntity)
+
+    @Query("DELETE FROM sync_cursor")
+    suspend fun clear()
 }

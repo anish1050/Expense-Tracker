@@ -35,17 +35,17 @@ data class HomeState(
 class HomeViewModel(container: AppContainer) : ViewModel() {
     private val dao = container.db.transactionDao()
     private val month = Period.month()
+    private val zone: ZoneId = ZoneId.systemDefault()
 
-    val state: StateFlow<HomeState> = combine(
-        dao.rows(month.from, month.to),
-        dao.dailyNet(month.from, month.to),
-        dao.reviewCount(),
-    ) { rows, days, review ->
-        val running = days.runningFold(0L) { acc, day -> acc + day.dayNetMinor }.drop(1)
+    // Days are grouped in the device zone here rather than in SQL, which only
+    // knows UTC epoch arithmetic. One month of rows is small.
+    val state: StateFlow<HomeState> = combine(dao.rows(month.from, month.to), dao.reviewCount()) { rows, review ->
+        val groups = groupByDay(rows)
+        val running = groups.asReversed().runningFold(0L) { acc, g -> acc + g.netMinor }.drop(1)
         HomeState(
             balanceMinor = running.lastOrNull() ?: 0L,
             points = downsample(running),
-            groups = groupByDay(rows),
+            groups = groups,
             reviewCount = review,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
@@ -57,7 +57,6 @@ class HomeViewModel(container: AppContainer) : ViewModel() {
     }
 
     private fun groupByDay(rows: List<TransactionRow>): List<DayGroup> {
-        val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
         return rows.groupBy { Instant.ofEpochMilli(it.occurredAt).atZone(zone).toLocalDate() }
             .map { (date, dayRows) ->
@@ -69,6 +68,7 @@ class HomeViewModel(container: AppContainer) : ViewModel() {
                 val net = dayRows.sumOf { if (it.direction == Direction.credit) it.amountMinor else -it.amountMinor }
                 DayGroup(date.atStartOfDay(zone).toInstant().toEpochMilli(), label, net, dayRows)
             }
+            .sortedByDescending { it.dayStart }
     }
 
     companion object {

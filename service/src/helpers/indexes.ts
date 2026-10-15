@@ -6,7 +6,7 @@ export function ensureIndexes(): Promise<void> {
   if (!ensured) {
     ensured = Promise.all([
       MongoClientCreateIndex('core_users', { google_sub: 1 }, { unique: true }),
-      MongoClientCreateIndex('sync_rows', { user_id: 1, updated_at: 1 }),
+      MongoClientCreateIndex('sync_rows', { user_id: 1, seq: 1 }),
       MongoClientCreateIndex('devices', { user_id: 1 }),
       MongoClientCreateIndex('parser_rules', { version: -1 }, { unique: true }),
       MongoClientCreateIndex('request_logs', { created_at: 1 }, { expireAfterSeconds: 604800 }),

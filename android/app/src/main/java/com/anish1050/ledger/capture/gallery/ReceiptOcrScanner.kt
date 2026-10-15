@@ -10,7 +10,9 @@ import com.anish1050.ledger.data.db.Source
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 sealed interface ScanOutcome {
     data class Parsed(val transaction: ParsedTransaction) : ScanOutcome
@@ -24,8 +26,11 @@ class ReceiptOcrScanner(private val context: Context) {
 
     private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
+    // Decoding the bitmap is disk + CPU work; it must not run on the caller's
+    // (main) thread.
     suspend fun scan(uri: Uri): ScanOutcome {
-        val text = recognizer.process(InputImage.fromFilePath(context, uri)).await().text
+        val image = withContext(Dispatchers.IO) { InputImage.fromFilePath(context, uri) }
+        val text = recognizer.process(image).await().text
         if (text.isBlank()) return ScanOutcome.NoMatch
 
         val engine = context.container.ruleStore.load()

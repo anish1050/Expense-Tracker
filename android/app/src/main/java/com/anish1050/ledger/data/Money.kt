@@ -22,20 +22,29 @@ object Money {
         }
     }
 
-    // "1,23,456.70", "1,234.56" and "1.234,56" all parse to the same minor units:
-    // a trailing comma plus two digits is a decimal separator, other commas and
-    // dots in group position are grouping. Mirrors toMinor() in the backend.
+    // "1,23,456.70", "1,234.56", "1.234,56" and "1.234" all parse to the same
+    // minor units: a trailing comma plus 1-2 digits is a decimal separator, dots
+    // that only ever sit in groups of three are grouping. More than two fraction
+    // digits or a value that does not fit in a Long is rejected rather than
+    // silently truncated or wrapped. Mirrors toMinor() in the backend.
     fun parseToMinor(text: String): Long? {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return null
-        val cleaned = if (EUROPEAN.matches(trimmed)) trimmed.replace(".", "").replace(',', '.') else trimmed.replace(",", "")
-        return runCatching { BigDecimal(cleaned).movePointRight(2).toLong() }.getOrNull()
+        val cleaned = when {
+            DECIMAL_COMMA.matches(trimmed) -> trimmed.replace(".", "").replace(',', '.')
+            DOT_GROUPED.matches(trimmed) -> trimmed.replace(".", "")
+            else -> trimmed.replace(",", "")
+        }
+        val value = runCatching { BigDecimal(cleaned) }.getOrNull() ?: return null
+        if (value.scale() > 2) return null
+        return runCatching { value.movePointRight(2).longValueExact() }.getOrNull()
     }
 
     /** Plain decimal text for editing, e.g. 123456 -> "1234.56", 50000 -> "500". */
     fun toEditableText(amountMinor: Long): String = BigDecimal.valueOf(amountMinor, 2).stripTrailingZeros().toPlainString()
 
-    private val EUROPEAN = Regex("""^\d{1,3}(?:\.\d{3})*,\d{1,2}$""")
+    private val DECIMAL_COMMA = Regex("""^\d{1,3}(?:\.\d{3})*,\d{1,2}$""")
+    private val DOT_GROUPED = Regex("""^\d{1,3}(?:\.\d{3})+$""")
 
     private fun symbolFor(currency: String) = when (currency) {
         "INR" -> "₹"

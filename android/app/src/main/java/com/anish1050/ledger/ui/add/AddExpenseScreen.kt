@@ -73,7 +73,8 @@ fun AddExpenseScreen(onDone: () -> Unit) {
     val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri ?: return@rememberLauncherForActivityResult
         scope.launch {
-            when (val outcome = scanner.scan(uri)) {
+            // An unreadable image is a no-op, not a crash.
+            when (val outcome = runCatching { scanner.scan(uri) }.getOrDefault(ScanOutcome.NoMatch)) {
                 is ScanOutcome.Parsed -> { context.container.transactions.ingest(outcome.transaction); onDone() }
                 is ScanOutcome.AmountOnly -> amount = Money.toEditableText(outcome.amountMinor)
                 ScanOutcome.NoMatch -> Unit

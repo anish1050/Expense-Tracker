@@ -108,9 +108,9 @@ private fun BudgetSetupStep(onNext: () -> Unit) {
         PrimaryButton(stringResource(R.string.next)) {
             scope.launch {
                 val budgets = context.container.budgets
-                Money.parseToMinor(week)?.let { budgets.set(BudgetPeriod.week, it) }
-                Money.parseToMinor(month)?.let { budgets.set(BudgetPeriod.month, it) }
-                Money.parseToMinor(year)?.let { budgets.set(BudgetPeriod.year, it) }
+                Money.parseToMinor(week)?.takeIf { it > 0 }?.let { budgets.set(BudgetPeriod.week, it) }
+                Money.parseToMinor(month)?.takeIf { it > 0 }?.let { budgets.set(BudgetPeriod.month, it) }
+                Money.parseToMinor(year)?.takeIf { it > 0 }?.let { budgets.set(BudgetPeriod.year, it) }
                 onNext()
             }
         }
@@ -126,7 +126,8 @@ private fun PermissionsStep(onDone: () -> Unit) {
     var sms by remember { mutableStateOf(SmsCapture.isGranted(context)) }
     val smsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         sms = granted.values.all { it }
-        if (sms) scope.launch { SmsCapture.backfill(context) }
+        // App-scoped so tapping Done right away cannot cancel the import.
+        if (sms) context.container.scope.launch { SmsCapture.backfill(context) }
     }
 
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

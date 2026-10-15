@@ -37,6 +37,7 @@ describe('DELETE /api/me', () => {
 
     expect((await api('/api/me', { method: 'DELETE' }, token)).status).toBe(204)
     expect((await MongoClientFind<SyncRowDoc>('sync_rows', { user_id: userId })).data).toHaveLength(0)
-    expect((await api('/api/me', { method: 'DELETE' }, token)).status).toBe(204)
+    // Second call: the account is gone, so the token no longer authenticates.
+    expect((await api('/api/me', { method: 'DELETE' }, token)).status).toBe(401)
   })
 })

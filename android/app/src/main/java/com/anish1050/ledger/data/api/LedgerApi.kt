@@ -24,6 +24,8 @@ data class SyncRow(
     val ciphertext: String,
     val nonce: String,
     val deleted: Boolean,
+    /** Server-assigned on pull; absent on push. */
+    val seq: Long = 0,
 )
 
 @Serializable
@@ -46,7 +48,7 @@ class ApiException(val status: Int, message: String) : IOException(message)
 // Thin OkHttp wrapper over the backend; every call is snake_case JSON in and out.
 class LedgerApi(private val baseUrl: String, private val auth: AuthStore) {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = false }
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
@@ -69,6 +71,7 @@ class LedgerApi(private val baseUrl: String, private val auth: AuthStore) {
     }
 
     suspend fun push(deviceId: String, rows: List<SyncRow>): PushResult {
+        // The server rejects unknown keys, and seq is its field to assign.
         val body = json.encodeToString(PushBody.serializer(), PushBody(deviceId, rows))
         return json.decodeFromJsonElement(PushResult.serializer(), post("/api/sync/push", body))
     }

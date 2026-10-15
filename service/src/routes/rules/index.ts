@@ -14,6 +14,7 @@ rulesRoutes.get('/', zValidator('query', querySchema, validationHook), async (c)
   const { since_version: sinceVersion } = c.req.valid('query')
   try {
     const latest = await MongoClientFindOne<ParserRulesDoc>('parser_rules', {}, { sort: { version: -1 }, projection: { version: 1, rules: 1 } })
+    // A missing ruleset is a real 404; database errors now throw and become 500.
     if (!latest.data) return notFoundResponse(c, 'No ruleset published')
     if (latest.data.version <= sinceVersion) return c.body(null, 304)
     c.header('Cache-Control', 'public, max-age=3600')
