@@ -5,7 +5,7 @@ $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot"
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 $env:Path = "$env:JAVA_HOME\bin;$env:LOCALAPPDATA\gradle-8.11.1\bin;$env:ANDROID_HOME\platform-tools;$env:Path"
 Set-Location $PSScriptRoot
-$tasks = if ($args.Count -gt 0) { $args } else { @("testPlayDebugUnitTest", "assemblePlayDebug", "assembleFossDebug") }
+[string[]]$tasks = if ($args.Count -gt 0) { @($args) } else { @("testPlayDebugUnitTest", "assemblePlayDebug", "assembleFossDebug") }
 $gradle = "$env:LOCALAPPDATA\gradle-8.11.1\bin\gradle.bat"
 if (-not (Test-Path $gradle)) { Write-Host "gradle not found at $gradle"; exit 1 }
 & $gradle @tasks --console=plain --stacktrace 2>&1 | Tee-Object -FilePath "$PSScriptRoot\build-local.log"

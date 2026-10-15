@@ -80,22 +80,26 @@ fun ReportScreen() {
             }
         }
         item {
-            Box(Modifier.fillMaxWidth().height(190.dp)) {
-                DonutChart(state.totals.map { it.totalMinor.toFloat() }, selected, Modifier.size(170.dp).align(Alignment.Center)) { selected = it }
-                Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                    if (selected in state.totals.indices) {
-                        Text("${state.totals[selected].totalMinor * 100 / maxOf(1, state.totalMinor)}%", style = MaterialTheme.typography.titleMedium)
-                        Text(state.totals[selected].name, style = MaterialTheme.typography.bodySmall)
-                    } else {
-                        Text("total", style = MaterialTheme.typography.labelSmall)
-                        Text(Money.format(state.totalMinor, state.currency), style = MaterialTheme.typography.titleMedium)
+            // Donut on the left, tip in the right-hand corner beside it: they
+            // share a row so the tip can never cover a segment.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+                Box(Modifier.size(180.dp), contentAlignment = Alignment.Center) {
+                    DonutChart(state.totals.map { it.totalMinor.toFloat() }, selected, Modifier.size(170.dp)) { selected = it }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        if (selected in state.totals.indices) {
+                            Text("${state.totals[selected].totalMinor * 100 / maxOf(1, state.totalMinor)}%", style = MaterialTheme.typography.titleMedium)
+                            Text(state.totals[selected].name, style = MaterialTheme.typography.bodySmall)
+                        } else {
+                            Text("total", style = MaterialTheme.typography.labelSmall)
+                            Text(Money.format(state.totalMinor, state.currency), style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
                 state.tip?.let { tip ->
-                    Column(Modifier.align(Alignment.TopEnd).width(130.dp).background(Mist, RoundedCornerShape(12.dp)).padding(8.dp)) {
+                    Column(Modifier.weight(1f).background(Mist, RoundedCornerShape(12.dp)).padding(10.dp)) {
                         Text("tip", style = MaterialTheme.typography.labelSmall)
-                        Text(tip.headline, fontSize = 11.sp, color = Ink, style = MaterialTheme.typography.titleMedium)
-                        tip.detail?.let { Text(it, fontSize = 10.sp, lineHeight = 13.sp) }
+                        Text(tip.headline, fontSize = 13.sp, color = Ink, style = MaterialTheme.typography.titleMedium)
+                        tip.detail?.let { Text(it, fontSize = 12.sp, lineHeight = 16.sp) }
                     }
                 }
             }

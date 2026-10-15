@@ -31,7 +31,7 @@ data class AccountEntity(
     val version: Int = 1,
     val deleted: Boolean = false,
     // Local only: the version the server has accepted. version > pushed_version means dirty.
-    @ColumnInfo(name = "pushed_version") @Transient val pushedVersion: Int = 0,
+    @ColumnInfo(name = "pushed_version", defaultValue = "0") @Transient val pushedVersion: Int = 0,
 )
 
 @Serializable
@@ -47,7 +47,7 @@ data class CategoryEntity(
     val version: Int = 1,
     val deleted: Boolean = false,
     // Local only: the version the server has accepted. version > pushed_version means dirty.
-    @ColumnInfo(name = "pushed_version") @Transient val pushedVersion: Int = 0,
+    @ColumnInfo(name = "pushed_version", defaultValue = "0") @Transient val pushedVersion: Int = 0,
 )
 
 @Serializable
@@ -61,7 +61,7 @@ data class BudgetEntity(
     val version: Int = 1,
     val deleted: Boolean = false,
     // Local only: the version the server has accepted. version > pushed_version means dirty.
-    @ColumnInfo(name = "pushed_version") @Transient val pushedVersion: Int = 0,
+    @ColumnInfo(name = "pushed_version", defaultValue = "0") @Transient val pushedVersion: Int = 0,
 )
 
 @Serializable
@@ -98,7 +98,7 @@ data class TransactionEntity(
     val version: Int = 1,
     val deleted: Boolean = false,
     // Local only: the version the server has accepted. version > pushed_version means dirty.
-    @ColumnInfo(name = "pushed_version") @Transient val pushedVersion: Int = 0,
+    @ColumnInfo(name = "pushed_version", defaultValue = "0") @Transient val pushedVersion: Int = 0,
 )
 
 @Entity(tableName = "sync_cursor")

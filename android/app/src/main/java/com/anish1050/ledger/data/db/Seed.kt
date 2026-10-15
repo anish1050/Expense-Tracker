@@ -35,7 +35,7 @@ object Seed {
                 ContentValues().apply {
                     put("id", c.id); put("name", c.name); put("emoji", c.emoji); put("sort_order", index)
                     put("discretionary", c.discretionary); put("created_at", now); put("updated_at", now)
-                    put("version", 1); put("deleted", false)
+                    put("version", 1); put("deleted", false); put("pushed_version", 0)
                 },
             )
         }
@@ -44,7 +44,7 @@ object Seed {
             ContentValues().apply {
                 put("id", CASH_ACCOUNT_ID); put("name", "cash"); put("kind", AccountKind.cash.name)
                 putNull("last4"); put("currency", "INR"); put("created_at", now); put("updated_at", now)
-                put("version", 1); put("deleted", false)
+                put("version", 1); put("deleted", false); put("pushed_version", 0)
             },
         )
     }

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -57,6 +58,8 @@ android {
         // bundles rules.json as an asset (copied below) and tests read fixtures directly.
         getByName("main").assets.srcDirs(layout.buildDirectory.dir("generated/rules-assets"))
         getByName("test").resources.srcDirs("../../shared/parser-rules")
+        // Robolectric MigrationTestHelper reads schemas from the debug variant assets.
+        getByName("debug").assets.srcDirs("$projectDir/schemas")
     }
 
     testOptions {
@@ -79,9 +82,12 @@ val copyRules by tasks.registering(Copy::class) {
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach { dependsOn(copyRules) }
 tasks.matching { it.name.startsWith("generate") && it.name.endsWith("Assets") }.configureEach { dependsOn(copyRules) }
 
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 ksp {
     arg("room.generateKotlin", "true")
-    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
